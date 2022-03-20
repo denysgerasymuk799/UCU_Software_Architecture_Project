@@ -1,2 +1,2 @@
 flask
-kafka
+kafka-python

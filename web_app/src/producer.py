@@ -4,12 +4,12 @@ import configparser
 from json import dumps
 from kafka import KafkaProducer
 
-import custom_logger
+from src.custom_logger import MyHandler
 
 logger = logging.getLogger('root')
 logger.setLevel('INFO')
 logging.disable(logging.DEBUG)
-logger.addHandler(custom_logger.MyHandler())
+logger.addHandler(MyHandler())
 
 
 def on_send_success(record_metadata):

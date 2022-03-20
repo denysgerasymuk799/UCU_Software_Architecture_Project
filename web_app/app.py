@@ -35,9 +35,12 @@ def data():
         messages = []
         for i in range(10):
             msg = {
-                'from_account_ID': 1,
-                'to_account_ID': 2,
-                'amount': 10
+                'transaction_id': 123,
+                'from_card_number': 8888888888888888,
+                'to_card_number': 7777777777777777,
+                'amount': 1000_000,
+                'currency': 'UAH',
+                'comment': 'For support of the Armed Forces of Ukraine'
             }
             messages.append(msg)
 
