@@ -1,2 +1,7 @@
-flask
-kafka-python
+fastapi
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic
+python-multipart
+uvicorn
+jinja2
