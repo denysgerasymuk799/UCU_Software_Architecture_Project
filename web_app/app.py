@@ -5,11 +5,15 @@ from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from models import Token, TokenData, User, UserInDB
 from auth.forms import LoginForm
+
+# import app modules
+from database.db_models import db
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -18,16 +22,30 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-# Username: johndoe Password: secret
-fake_users_db = {
-    "johndoe@": {
-        "username": "johndoe@",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    }
-}
+# Username: johndoe@ Password: secret
+# fake_users_db = {
+#     "johndoe@": {
+#         "username": "johndoe@",
+#         "full_name": "John Doe",
+#         "email": "johndoe@example.com",
+#         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+#         "disabled": False,
+#     }
+# }
+# fake_users_db = {
+#     "johndoe@": {
+#         "email": "johndoe@example.com",  # username
+#         "phone_number": "+380677777777",
+#         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+#         "first_name": "John",
+#         "last_name": "Doe",
+#         "profile_photo_link": "",
+#         "birthday_date": "2002-10-02T01:11:18.965Z", # ISODate(<timestamp>)
+#         "city": "Lviv",
+#         "address": "Strange street, building 0, apartment -1",
+#         "disabled": False,
+#     }
+# }
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -47,14 +65,16 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
+async def get_user(db, email: str):
+    if (user_dict := await db["users"].find_one({"email": email})) is not None:
+        print('user_dict -- ', user_dict)
         return UserInDB(**user_dict)
 
+    raise HTTPException(status_code=404, detail=f"Uset {email} not found")
 
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+
+async def authenticate_user(db, email: str, password: str):
+    user = await get_user(db, email)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -81,13 +101,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        email: str = payload.get("sub")
+        if email is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
+        token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    user = get_user(db, email=token_data.email)
     if user is None:
         raise credentials_exception
     return user
@@ -99,18 +119,23 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-@app.post("/token", response_model=Token)
+@app.get("/")
+async def home_page(request: Request):
+    return RedirectResponse(url='/login/')
+
+
+@app.post("/token")
 async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
     response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)  # set HttpOnly cookie in response
     return {"access_token": access_token, "token_type": "bearer"}
@@ -123,7 +148,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 @app.get("/users/me/items/")
 async def read_own_items(current_user: User = Depends(get_current_active_user)):
-    return [{"item_id": "Foo", "owner": current_user.username}]
+    return [{"item_id": "Foo", "owner": current_user.email}]
 
 
 @app.get("/login/")
@@ -138,7 +163,8 @@ async def login(request: Request):
     if await form.is_valid():
         try:
             form.__dict__.update(msg="Login Successful :)")
-            response = templates.TemplateResponse("index.html", form.__dict__)
+            # response = templates.TemplateResponse("index.html", form.__dict__)
+            response = RedirectResponse(url='/profile_page/')
             await login_for_access_token(response=response, form_data=form)
             return response
         except HTTPException:
@@ -149,6 +175,13 @@ async def login(request: Request):
     return templates.TemplateResponse("login.html", form.__dict__)
 
 
+@app.get("/profile_page/")
+def profile_page(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
 if __name__ == "__main__":
+    print('users email -- ', db.users.find_one({'email': 'johndoe@example.com'}))
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)
+

@@ -1,7 +1,12 @@
 fastapi
 python-jose[cryptography]
+pydantic[email]
 passlib[bcrypt]
 pydantic
 python-multipart
 uvicorn
 jinja2
+pymongo
+motor
+python-dotenv
+dnspython
