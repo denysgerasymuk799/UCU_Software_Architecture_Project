@@ -165,8 +165,9 @@ async def login(request: Request):
     if await form.is_valid():
         try:
             form.__dict__.update(msg="Login Successful :)")
-            response = templates.TemplateResponse("index.html", form.__dict__)
-            # response = RedirectResponse(url='/profile_page/')
+            # response = templates.TemplateResponse("index.html", form.__dict__)
+            response = RedirectResponse(url='/profile_page/',
+                                        status_code=status.HTTP_302_FOUND)
             await login_for_access_token(response=response, form_data=form)
             return response
         except HTTPException:
@@ -182,7 +183,6 @@ def profile_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
-
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8080)
