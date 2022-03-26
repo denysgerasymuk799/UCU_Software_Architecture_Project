@@ -1,3 +1,4 @@
+import asyncio
 from jose import JWTError, jwt
 from typing import Optional
 from passlib.context import CryptContext
@@ -65,16 +66,17 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-async def get_user(db, email: str):
-    if (user_dict := await db["users"].find_one({"email": email})) is not None:
+async def get_user(email: str):
+    user_dict = await db["users"].find_one({"email": email})
+    if user_dict is not None:
         print('user_dict -- ', user_dict)
         return UserInDB(**user_dict)
 
     raise HTTPException(status_code=404, detail=f"Uset {email} not found")
 
 
-async def authenticate_user(db, email: str, password: str):
-    user = await get_user(db, email)
+async def authenticate_user(email: str, password: str):
+    user = await get_user(email)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -107,7 +109,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    user = get_user(db, email=token_data.email)
+    user = get_user(email=token_data.email)
     if user is None:
         raise credentials_exception
     return user
@@ -126,7 +128,7 @@ async def home_page(request: Request):
 
 @app.post("/token")
 async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await authenticate_user(db, form_data.username, form_data.password)
+    user = await authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -163,8 +165,8 @@ async def login(request: Request):
     if await form.is_valid():
         try:
             form.__dict__.update(msg="Login Successful :)")
-            # response = templates.TemplateResponse("index.html", form.__dict__)
-            response = RedirectResponse(url='/profile_page/')
+            response = templates.TemplateResponse("index.html", form.__dict__)
+            # response = RedirectResponse(url='/profile_page/')
             await login_for_access_token(response=response, form_data=form)
             return response
         except HTTPException:
@@ -181,7 +183,6 @@ def profile_page(request: Request):
 
 
 if __name__ == "__main__":
-    print('users email -- ', db.users.find_one({'email': 'johndoe@example.com'}))
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)
 

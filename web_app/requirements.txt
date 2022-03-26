@@ -10,3 +10,4 @@ pymongo
 motor
 python-dotenv
 dnspython
+asyncio

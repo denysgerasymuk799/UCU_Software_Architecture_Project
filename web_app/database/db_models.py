@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URL"))
-db = client.college
+db = client.web_banking
 
 
 class PyObjectId(ObjectId):
