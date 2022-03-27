@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c403e2cd-3a0a-4b2b-9677-56bb4358c7e7" name="Changes" comment="" />
+    <list default="true" id="c403e2cd-3a0a-4b2b-9677-56bb4358c7e7" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -55,7 +57,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/web_app/domain_logic" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -183,7 +185,8 @@
       <workItem from="1648321518577" duration="13477000" />
       <workItem from="1648335904380" duration="1399000" />
       <workItem from="1648337396544" duration="189000" />
-      <workItem from="1648371203986" duration="26190000" />
+      <workItem from="1648371203986" duration="26456000" />
+      <workItem from="1648404101614" duration="11000" />
     </task>
     <servers />
   </component>

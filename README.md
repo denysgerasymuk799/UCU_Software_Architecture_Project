@@ -9,7 +9,7 @@
 
 ### Web App
 
-To start web backend run:
+To start web backend execute:
 
 ```shell
 # Start the service:
