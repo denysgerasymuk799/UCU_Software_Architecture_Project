@@ -1,7 +1,7 @@
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
-from Crypto.Util.number import ceil_div, bytes_to_long, long_to_bytes
+from Crypto.Util.number import bytes_to_long, long_to_bytes
 
 
 class Cryptographer:
@@ -25,7 +25,6 @@ class Cryptographer:
     def sign(self, data):
         h = SHA256.new(data)
         return pkcs1_15.new(self.__private_key).sign(h)
-        # return base64.b64encode(str((self.__private_key.sign(data, ''))[0]).encode())
 
     def verify(self, data, signature):
         h = SHA256.new(data)
@@ -34,7 +33,6 @@ class Cryptographer:
             return True
         except (ValueError, TypeError):
             return False
-        # return public_key.verify(data, (int(base64.b64decode(sign)),))
 
 
 if __name__ == '__main__':
@@ -42,7 +40,6 @@ if __name__ == '__main__':
     data_bytes = bytes(data, 'utf-8')
     cryptographer = Cryptographer('../secrets/public_key.pem', '../secrets/private_key.pem')
     signature = bytes_to_long(cryptographer.sign(data_bytes))
-    # print('signature -- ', unicode(signature, errors='ignore'))
     print(type(signature))
     print('signature -- ', signature)
     signature = long_to_bytes(signature)

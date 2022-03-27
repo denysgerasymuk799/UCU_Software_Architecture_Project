@@ -21,29 +21,27 @@ from auth.forms import LoginForm
 from dotenv import load_dotenv
 from Crypto.Util.number import bytes_to_long, long_to_bytes
 
-# import app modules
+# Import app modules
 from database.db_models import db
 from domain_logic.transactions import TransactionForm
 from utils.custom_logger import MyHandler
 from utils.cryptographer import Cryptographer
 
-# to get a string like this run:
-# openssl rand -hex 32
+# Set up global constants
 load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")  # to get a string like this run: openssl rand -hex 32
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
+# Password protection utils
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
+# Add logic for asynchronous requests
 loop = asyncio.get_event_loop()
 client = aiohttp.ClientSession(loop=loop)
 
+# Prepare own helper class objects
 cryptographer = Cryptographer(public_key_location=os.getenv('PUBLIC_KEY_LOCATION'),
                               private_key_location=os.getenv('PRIVATE_KEY_LOCATION'))
 logger = logging.getLogger('root')
@@ -51,10 +49,17 @@ logger.setLevel('INFO')
 logging.disable(logging.DEBUG)
 logger.addHandler(MyHandler())
 
+# Create app object
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 
 async def get_json(client, url, headers, data):
+    """
+    Make asynchronous GET request
+    """
     async with client.get(url, headers=headers, json=data) as response:
-        # assert response.status == 200
         return await response.read()
 
 
@@ -67,9 +72,12 @@ def get_password_hash(password):
 
 
 async def get_user(email: str):
+    """
+    Find user in database
+    """
     user_dict = await db["users"].find_one({"email": email})
     if user_dict is not None:
-        print('user_dict -- ', user_dict)
+        logger.info(f'Found user in db: user email -- {user_dict["email"]}')
         return UserInDB(**user_dict)
 
     raise HTTPException(status_code=404, detail=f"User {email} not found")
@@ -85,6 +93,9 @@ async def authenticate_user(email: str, password: str):
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """
+    Create access token, which will be verified for each action, that requires authorization
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -96,7 +107,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    print('get_current_user(): token -- ', token)
+    """
+    Check user access token, if it is still valid, find user in db and return it
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -104,7 +117,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print('payload -- ', payload)
+        logger.info(f'payload -- {payload}')
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -112,14 +125,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     user = await get_user(email=token_data.email)
-    print('user -- ', user)
     if user is None:
         raise credentials_exception
     return user
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    print('get_current_active_user(): current_user -- ', current_user)
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -148,21 +159,6 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/users/me", response_model=User)
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
-    return current_user
-
-
-@app.get("/users/me/items")
-# async def read_own_items(current_user: User = Depends(get_current_active_user)):
-async def read_own_items(access_token: Optional[str] = Cookie(None)):
-    print('read_own_items: access_token -- ', access_token)
-    token = access_token[access_token.find("Bearer ") + 1:]
-    print('token -- ', token)
-    current_user = await get_current_active_user(token)
-    return [{"item_id": "Foo", "owner": current_user.email}]
-
-
 @app.get("/login")
 def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
@@ -175,11 +171,9 @@ async def login(request: Request):
     if await form.is_valid():
         try:
             form.__dict__.update(msg="Login Successful :)")
-            # response = templates.TemplateResponse("index.html", form.__dict__)
             response = RedirectResponse(url='/profile_page',
                                         status_code=status.HTTP_302_FOUND)
             await login_for_access_token(response=response, form_data=form)
-            print('response.raw_headers -- ', response.raw_headers)
             return response
         except HTTPException:
             pass
@@ -190,8 +184,7 @@ async def login(request: Request):
 
 
 @app.get("/profile_page")
-def profile_page(request: Request, access_token: Optional[str] = Cookie(None)):
-    print('profile_page(): access_token -- ', access_token)
+def profile_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -206,15 +199,11 @@ async def handle_transaction(request: Request, access_token: Optional[str] = Coo
 
     await form.load_data()
     if form.is_valid():
-        print("Validate transaction: form.__dict__ -- ", form.__dict__)
         host = request.client.host
         port = request.client.port
         get_test_url = f"http://{host}:8000/transactions/authorize"
-        print('get_test_url -- ', get_test_url)
-        print('access_token -- ', access_token)
 
-        # test_get_response = requests.get(get_test_url, headers={"Authorization": access_token,
-        #                                                         "Accept": "application/json"})
+        # Send request to authorize user transaction
         data = copy(form.__dict__)
         data.pop('request', None)
         data.pop('errors', None)
@@ -223,31 +212,33 @@ async def handle_transaction(request: Request, access_token: Optional[str] = Coo
         authorizer_response = await get_json(client, get_test_url,
                                              headers={"Authorization": access_token, "Accept": "application/json"},
                                              data=data)
+
+        # Process response to get result
         authorizer_response = authorizer_response.decode("utf-8")
         authorizer_response = json.loads(authorizer_response)
-        print('type(authorizer_response) -- ', type(authorizer_response))
-        print('test_get_response -- ', authorizer_response)
-        print("authorizer_response['signature'] -- ", type(authorizer_response['signature']))
         signature = long_to_bytes(authorizer_response['signature'])
 
         check_data = copy(data)
         check_data['validated'] = False
         check_data['signature'] = None
-        print('cryptographer.verify -- ', cryptographer.verify(bytes(str(check_data), 'utf-8'), signature))
+
+        # Check if user transaction is authorized
+        if cryptographer.verify(bytes(str(check_data), 'utf-8'), signature):
+            msg = "Transaction is verified!"
+        else:
+            msg = "Transaction is not verified!"
+        logger.info(msg)
+        return Response(msg, status_code=200)
 
 
 @app.get("/transactions/authorize")
 async def authorize_transaction(request: Request, current_user: User = Depends(get_current_active_user)):
     request_body = await request.json()
     logger.info(f'Request -- {request_body}')
-    print('authorize_transaction: current_user -- ', current_user)
+    logger.info(f'current_user.email -- {current_user.email}')
 
     request_body_bytes = bytes(str(request_body), 'utf-8')
     request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
     request_body['validated'] = True
     response = json.dumps(request_body)
     return Response(response, status_code=200)
-
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8080)
