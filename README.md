@@ -9,6 +9,8 @@
 
 ### Web App
 
+To start web backend run:
+
 ```shell
 # Start the service:
 uvicorn app:app --workers 2 --reload
