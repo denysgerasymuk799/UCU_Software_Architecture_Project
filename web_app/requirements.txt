@@ -9,6 +9,8 @@ jinja2
 pymongo
 motor
 requests
+aiohttp
+PyCryptodome
 python-dotenv
 dnspython
 asyncio

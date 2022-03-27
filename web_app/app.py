@@ -1,5 +1,10 @@
 import os
+import json
+import aiohttp
+import asyncio
+import logging
 import requests
+from copy import copy
 from jose import JWTError, jwt
 from typing import Optional
 from passlib.context import CryptContext
@@ -14,10 +19,13 @@ from fastapi.templating import Jinja2Templates
 from models import Token, TokenData, User, UserInDB
 from auth.forms import LoginForm
 from dotenv import load_dotenv
+from Crypto.Util.number import bytes_to_long, long_to_bytes
 
 # import app modules
 from database.db_models import db
 from domain_logic.transactions import TransactionForm
+from utils.custom_logger import MyHandler
+from utils.cryptographer import Cryptographer
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -32,6 +40,22 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+loop = asyncio.get_event_loop()
+client = aiohttp.ClientSession(loop=loop)
+
+cryptographer = Cryptographer(public_key_location=os.getenv('PUBLIC_KEY_LOCATION'),
+                              private_key_location=os.getenv('PRIVATE_KEY_LOCATION'))
+logger = logging.getLogger('root')
+logger.setLevel('INFO')
+logging.disable(logging.DEBUG)
+logger.addHandler(MyHandler())
+
+
+async def get_json(client, url, headers, data):
+    async with client.get(url, headers=headers, json=data) as response:
+        # assert response.status == 200
+        return await response.read()
 
 
 def verify_password(plain_password, hashed_password):
@@ -119,7 +143,8 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)  # set HttpOnly cookie in response
+    response.set_cookie(key="access_token", value=f"Bearer {access_token}",
+                        httponly=True)  # set HttpOnly cookie in response
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -188,18 +213,40 @@ async def handle_transaction(request: Request, access_token: Optional[str] = Coo
         print('get_test_url -- ', get_test_url)
         print('access_token -- ', access_token)
 
-        test_get_response = requests.get(get_test_url, headers={"Authorization": access_token,
-                                                                "Accept": "application/json"})
-        print('test_get_response -- ', test_get_response.text)
+        # test_get_response = requests.get(get_test_url, headers={"Authorization": access_token,
+        #                                                         "Accept": "application/json"})
+        data = copy(form.__dict__)
+        data.pop('request', None)
+        data.pop('errors', None)
+        data['validated'] = False
+        data['signature'] = None
+        authorizer_response = await get_json(client, get_test_url,
+                                             headers={"Authorization": access_token, "Accept": "application/json"},
+                                             data=data)
+        authorizer_response = authorizer_response.decode("utf-8")
+        authorizer_response = json.loads(authorizer_response)
+        print('type(authorizer_response) -- ', type(authorizer_response))
+        print('test_get_response -- ', authorizer_response)
+        print("authorizer_response['signature'] -- ", type(authorizer_response['signature']))
+        signature = long_to_bytes(authorizer_response['signature'])
+
+        check_data = copy(data)
+        check_data['validated'] = False
+        check_data['signature'] = None
+        print('cryptographer.verify -- ', cryptographer.verify(bytes(str(check_data), 'utf-8'), signature))
 
 
 @app.get("/transactions/authorize")
-async def authorize_transaction(current_user: User = Depends(get_current_active_user)):
-# async def authorize_transaction(access_token: Optional[str] = Cookie(None)):
-#     print('access_token -- ', access_token)
+async def authorize_transaction(request: Request, current_user: User = Depends(get_current_active_user)):
+    request_body = await request.json()
+    logger.info(f'Request -- {request_body}')
     print('authorize_transaction: current_user -- ', current_user)
-    return Response("Authorized", status_code=200)
 
+    request_body_bytes = bytes(str(request_body), 'utf-8')
+    request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
+    request_body['validated'] = True
+    response = json.dumps(request_body)
+    return Response(response, status_code=200)
 
 # if __name__ == "__main__":
 #     import uvicorn

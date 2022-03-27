@@ -11,5 +11,5 @@
 
 ```shell
 # Start the service:
-uvicorn app:app --reload
+uvicorn app:app --workers 2 --reload
 ```
