@@ -1,10 +1,11 @@
-import asyncio
+import os
+import requests
 from jose import JWTError, jwt
 from typing import Optional
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
-from fastapi import Depends, FastAPI, HTTPException, status, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, status, Request, Response, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,45 +13,20 @@ from fastapi.templating import Jinja2Templates
 
 from models import Token, TokenData, User, UserInDB
 from auth.forms import LoginForm
+from dotenv import load_dotenv
 
 # import app modules
 from database.db_models import db
+from domain_logic.transactions import TransactionForm
 
 # to get a string like this run:
 # openssl rand -hex 32
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-
-# Username: johndoe@ Password: secret
-# fake_users_db = {
-#     "johndoe@": {
-#         "username": "johndoe@",
-#         "full_name": "John Doe",
-#         "email": "johndoe@example.com",
-#         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-#         "disabled": False,
-#     }
-# }
-# fake_users_db = {
-#     "johndoe@": {
-#         "email": "johndoe@example.com",  # username
-#         "phone_number": "+380677777777",
-#         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-#         "first_name": "John",
-#         "last_name": "Doe",
-#         "profile_photo_link": "",
-#         "birthday_date": "2002-10-02T01:11:18.965Z", # ISODate(<timestamp>)
-#         "city": "Lviv",
-#         "address": "Strange street, building 0, apartment -1",
-#         "disabled": False,
-#     }
-# }
-
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
 
 app = FastAPI()
@@ -72,7 +48,7 @@ async def get_user(email: str):
         print('user_dict -- ', user_dict)
         return UserInDB(**user_dict)
 
-    raise HTTPException(status_code=404, detail=f"Uset {email} not found")
+    raise HTTPException(status_code=404, detail=f"User {email} not found")
 
 
 async def authenticate_user(email: str, password: str):
@@ -96,6 +72,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    print('get_current_user(): token -- ', token)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -103,19 +80,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print('payload -- ', payload)
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    user = get_user(email=token_data.email)
+    user = await get_user(email=token_data.email)
+    print('user -- ', user)
     if user is None:
         raise credentials_exception
     return user
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
+    print('get_current_active_user(): current_user -- ', current_user)
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -123,7 +103,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 
 @app.get("/")
 async def home_page(request: Request):
-    return RedirectResponse(url='/login/')
+    return RedirectResponse(url='/login')
 
 
 @app.post("/token")
@@ -143,22 +123,27 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/users/me/", response_model=User)
+@app.get("/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
-@app.get("/users/me/items/")
-async def read_own_items(current_user: User = Depends(get_current_active_user)):
+@app.get("/users/me/items")
+# async def read_own_items(current_user: User = Depends(get_current_active_user)):
+async def read_own_items(access_token: Optional[str] = Cookie(None)):
+    print('read_own_items: access_token -- ', access_token)
+    token = access_token[access_token.find("Bearer ") + 1:]
+    print('token -- ', token)
+    current_user = await get_current_active_user(token)
     return [{"item_id": "Foo", "owner": current_user.email}]
 
 
-@app.get("/login/")
+@app.get("/login")
 def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
-@app.post("/login/")
+@app.post("/login")
 async def login(request: Request):
     form = LoginForm(request)
     await form.load_data()
@@ -166,9 +151,10 @@ async def login(request: Request):
         try:
             form.__dict__.update(msg="Login Successful :)")
             # response = templates.TemplateResponse("index.html", form.__dict__)
-            response = RedirectResponse(url='/profile_page/',
+            response = RedirectResponse(url='/profile_page',
                                         status_code=status.HTTP_302_FOUND)
             await login_for_access_token(response=response, form_data=form)
+            print('response.raw_headers -- ', response.raw_headers)
             return response
         except HTTPException:
             pass
@@ -178,9 +164,41 @@ async def login(request: Request):
     return templates.TemplateResponse("login.html", form.__dict__)
 
 
-@app.get("/profile_page/")
-def profile_page(request: Request):
+@app.get("/profile_page")
+def profile_page(request: Request, access_token: Optional[str] = Cookie(None)):
+    print('profile_page(): access_token -- ', access_token)
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.post("/transactions/handle_transaction")
+async def handle_transaction(request: Request, access_token: Optional[str] = Cookie(None)):
+    form = TransactionForm(request)
+    form.card_from = "4444444444444444"
+    form.card_from_cvv = "123"
+    form.card_from_exp_date_month = "12"
+    form.card_from_exp_date_year = "24"
+    form.card_to = "5555555555555555"
+
+    await form.load_data()
+    if form.is_valid():
+        print("Validate transaction: form.__dict__ -- ", form.__dict__)
+        host = request.client.host
+        port = request.client.port
+        get_test_url = f"http://{host}:8000/transactions/authorize"
+        print('get_test_url -- ', get_test_url)
+        print('access_token -- ', access_token)
+
+        test_get_response = requests.get(get_test_url, headers={"Authorization": access_token,
+                                                                "Accept": "application/json"})
+        print('test_get_response -- ', test_get_response.text)
+
+
+@app.get("/transactions/authorize")
+async def authorize_transaction(current_user: User = Depends(get_current_active_user)):
+# async def authorize_transaction(access_token: Optional[str] = Cookie(None)):
+#     print('access_token -- ', access_token)
+    print('authorize_transaction: current_user -- ', current_user)
+    return Response("Authorized", status_code=200)
 
 
 # if __name__ == "__main__":

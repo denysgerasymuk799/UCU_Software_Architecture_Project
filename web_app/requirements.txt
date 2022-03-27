@@ -8,6 +8,7 @@ uvicorn
 jinja2
 pymongo
 motor
+requests
 python-dotenv
 dnspython
 asyncio

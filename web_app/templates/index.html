@@ -63,7 +63,7 @@
 				</button>
 			</div>
 			<div class="bank-modal-content">
-				<form>
+				<form action="{{ url_for('handle_transaction') }}" method="POST">
 					<p>Оновіть дані профілю нижче:</p>
 					<div class="mdc-form-field bank-input">
 						<label class="mdc-text-field mdc-text-field--outlined" id="email">
@@ -78,15 +78,15 @@
 						</label>
 					</div>
 					<div class="mdc-form-field bank-input">
-						<label class="mdc-text-field mdc-text-field--outlined" id="password">
+						<label class="mdc-text-field mdc-text-field--outlined" id="money_amount">
 							<span class="mdc-notched-outline">
 								<span class="mdc-notched-outline__leading"></span>
 								<span class="mdc-notched-outline__notch">
-									<span class="mdc-floating-label" id="my-label-id">Новий пароль</span>
+									<span class="mdc-floating-label" id="my-label-id">Сума</span>
 								</span>
 								<span class="mdc-notched-outline__trailing"></span>
 							</span>
-							<input type="password" class="mdc-text-field__input" aria-labelledby="my-label-id">
+							<input type="number" name="money_amount" class="mdc-text-field__input" aria-labelledby="my-label-id">
 						</label>
 					</div>
 					<div class="mdc-form-field bank-input">
@@ -407,7 +407,7 @@
 <script type="text/javascript">
 
 mdc.textField.MDCTextField.attachTo(document.querySelector('#email'));
-mdc.textField.MDCTextField.attachTo(document.querySelector('#password'));
+mdc.textField.MDCTextField.attachTo(document.querySelector('#money_amount'));
 mdc.textField.MDCTextField.attachTo(document.querySelector('#pib'));
 
 </script>
