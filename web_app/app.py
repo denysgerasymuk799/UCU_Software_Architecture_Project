@@ -97,6 +97,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """
     Create access token, which will be verified for each action, that requires authorization
     """
+    # TODO: add refresh token if needed
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -108,9 +109,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def authorize_user(access_token):
     """
-    Check user access token, if it is still valid, find user in db and return it
+    Authorize user with access_token and existence user active record in database
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -118,22 +119,33 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         logger.info(f'payload -- {payload}')
         email: str = payload.get("sub")
         if email is None:
             logger.error('email is None')
-            raise credentials_exception
+            # raise credentials_exception
+            logger.error(f'HTTPException: {credentials_exception.detail}')
+            return RedirectResponse(url='/login')
         token_data = TokenData(email=email)
     except JWTError as err:
         # TODO: add Not authorized to login page and return it in this case
         logger.error(f'JWTError: {err}')
-        raise credentials_exception
+        logger.error(f'HTTPException: {credentials_exception.detail}')
+        return RedirectResponse(url='/login')
     user = await get_user(email=token_data.email)
     if user is None:
         logger.error('user is None')
-        raise credentials_exception
+        logger.error(f'HTTPException: {credentials_exception.detail}')
+        return RedirectResponse(url='/login')
     return user
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    Check user access token, if it is still valid, find user in db and return it
+    """
+    return await authorize_user(token)
 
 
 async def authorize_user_action(access_token: Optional[str] = Cookie(None)):
@@ -148,25 +160,10 @@ async def authorize_user_action(access_token: Optional[str] = Cookie(None)):
     try:
         # Get token value without "Bearer " prefix
         access_token = access_token[access_token.find("Bearer ") + 7:]
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.info(f'payload -- {payload}')
-        email: str = payload.get("sub")
-        if email is None:
-            logger.error('email is None')
-            raise credentials_exception
-        token_data = TokenData(email=email)
-    except JWTError as err:
-        # TODO: add Not authorized to login page and return it in this case
-        logger.error(f'JWTError: {err}')
-        raise credentials_exception
     except Exception as err:
         logger.error(f'Exception: {err}')
         raise credentials_exception
-    user = await get_user(email=token_data.email)
-    if user is None:
-        logger.error('user is None')
-        raise credentials_exception
-    return user
+    return await authorize_user(access_token)
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
@@ -224,15 +221,21 @@ async def login(request: Request):
 
 
 @app.get("/profile_page")
-def profile_page(request: Request, current_user: User = Depends(authorize_user_action)):
-    logger.info(f'current_user.email -- {current_user.email}')
+def profile_page(request: Request, authorize_response: User = Depends(authorize_user_action)):
+    # Return RedirectResponse on Login page in case failed authorization
+    if isinstance(authorize_response, RedirectResponse):
+        return authorize_response
+    logger.info(f'current_user.email -- {authorize_response.email}')
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/transactions/handle_transaction")
-async def handle_transaction(request: Request, current_user: User = Depends(authorize_user_action),
+async def handle_transaction(request: Request, authorize_response: User = Depends(authorize_user_action),
                              access_token: Optional[str] = Cookie(None)):
-    logger.info(f'current_user.email -- {current_user.email}')
+    # Return RedirectResponse on Login page in case failed authorization
+    if isinstance(authorize_response, RedirectResponse):
+        return authorize_response
+    logger.info(f'current_user.email -- {authorize_response.email}')
 
     form = TransactionForm(request)
     form.card_from = "4444444444444444"
