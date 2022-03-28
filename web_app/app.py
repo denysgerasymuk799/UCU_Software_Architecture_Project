@@ -89,6 +89,7 @@ async def authenticate_user(email: str, password: str):
         return False
     if not verify_password(password, user.hashed_password):
         return False
+    logger.info("Password in verified")
     return user
 
 
@@ -103,6 +104,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    logger.info("Access token is created")
     return encoded_jwt
 
 
@@ -120,18 +122,56 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         logger.info(f'payload -- {payload}')
         email: str = payload.get("sub")
         if email is None:
+            logger.error('email is None')
             raise credentials_exception
         token_data = TokenData(email=email)
-    except JWTError:
+    except JWTError as err:
+        # TODO: add Not authorized to login page and return it in this case
+        logger.error(f'JWTError: {err}')
         raise credentials_exception
     user = await get_user(email=token_data.email)
     if user is None:
+        logger.error('user is None')
+        raise credentials_exception
+    return user
+
+
+async def authorize_user_action(access_token: Optional[str] = Cookie(None)):
+    """
+    Check user access token, if it is still valid, find user in db and return it
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        # Get token value without "Bearer " prefix
+        access_token = access_token[access_token.find("Bearer ") + 7:]
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        logger.info(f'payload -- {payload}')
+        email: str = payload.get("sub")
+        if email is None:
+            logger.error('email is None')
+            raise credentials_exception
+        token_data = TokenData(email=email)
+    except JWTError as err:
+        # TODO: add Not authorized to login page and return it in this case
+        logger.error(f'JWTError: {err}')
+        raise credentials_exception
+    except Exception as err:
+        logger.error(f'Exception: {err}')
+        raise credentials_exception
+    user = await get_user(email=token_data.email)
+    if user is None:
+        logger.error('user is None')
         raise credentials_exception
     return user
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if current_user.disabled:
+        logger.error('HTTPException: Inactive user')
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
@@ -184,12 +224,16 @@ async def login(request: Request):
 
 
 @app.get("/profile_page")
-def profile_page(request: Request):
+def profile_page(request: Request, current_user: User = Depends(authorize_user_action)):
+    logger.info(f'current_user.email -- {current_user.email}')
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/transactions/handle_transaction")
-async def handle_transaction(request: Request, access_token: Optional[str] = Cookie(None)):
+async def handle_transaction(request: Request, current_user: User = Depends(authorize_user_action),
+                             access_token: Optional[str] = Cookie(None)):
+    logger.info(f'current_user.email -- {current_user.email}')
+
     form = TransactionForm(request)
     form.card_from = "4444444444444444"
     form.card_from_cvv = "123"
