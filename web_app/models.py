@@ -13,9 +13,12 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     email: str
-    phone_number: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    hashed_password: Optional[str] = None
+    birthday_date: Optional[str] = None
+    city: Optional[str] = None
+    address: Optional[str] = None
     disabled: Optional[bool] = None
 
 

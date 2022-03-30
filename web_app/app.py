@@ -11,13 +11,14 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, HTTPException, status, Request, Response, Cookie
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from models import Token, TokenData, User, UserInDB
-from auth.forms import LoginForm
+from auth.forms import LoginForm, RegistrationForm
 from dotenv import load_dotenv
 from Crypto.Util.number import bytes_to_long, long_to_bytes
 
@@ -81,6 +82,12 @@ async def get_user(email: str):
         return UserInDB(**user_dict)
 
     raise HTTPException(status_code=404, detail=f"User {email} not found")
+
+
+async def create_new_user(db, user: User):
+    print('user.__dict__ -- ', user.__dict__)
+    new_user = await db["users"].insert_one(user.__dict__)
+    return new_user.inserted_id
 
 
 async def authenticate_user(email: str, password: str):
@@ -194,6 +201,34 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     response.set_cookie(key="access_token", value=f"Bearer {access_token}",
                         httponly=True)  # set HttpOnly cookie in response
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/registration")
+def registration(request: Request):
+    return templates.TemplateResponse("registration.html", {"request": request})
+
+
+@app.post("/registration")
+async def registration(request: Request):
+    form = RegistrationForm(request)
+    await form.load_data()
+    if await form.is_valid():
+        try:
+            form.__dict__.update(msg="Registration is Successful :)")
+            new_user_id = await create_new_user(db, User(**form.__dict__))
+            print('new_user -- ', new_user_id)
+            print('type(new_user_id) -- ', type(new_user_id))
+
+            # response = json.dumps({"new_user_id": str(new_user_id)})
+            # return Response(response, status_code=status.HTTP_201_CREATED)
+            return JSONResponse(status_code=status.HTTP_201_CREATED, content={"new_user_id": str(new_user_id)})
+        except HTTPException:
+            pass
+
+    form.__dict__.update(msg="")
+    form.__dict__.get("errors").append("Incorrect Email or Password")
+    logger.info(form.__dict__.get("errors"))
+    return templates.TemplateResponse("registration.html", form.__dict__)
 
 
 @app.get("/login")
