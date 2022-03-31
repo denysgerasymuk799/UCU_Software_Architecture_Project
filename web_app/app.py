@@ -210,6 +210,8 @@ def registration(request: Request):
 
 @app.post("/registration")
 async def registration(request: Request):
+    print('start POST registration')
+    print(request.json())
     form = RegistrationForm(request)
     await form.load_data()
     if await form.is_valid():
@@ -225,10 +227,8 @@ async def registration(request: Request):
         except HTTPException:
             pass
 
-    form.__dict__.update(msg="")
-    form.__dict__.get("errors").append("Incorrect Email or Password")
     logger.info(form.__dict__.get("errors"))
-    return templates.TemplateResponse("registration.html", form.__dict__)
+    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": form.__dict__.get("errors")})
 
 
 @app.get("/login")
