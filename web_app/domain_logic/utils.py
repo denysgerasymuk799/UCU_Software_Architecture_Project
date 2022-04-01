@@ -6,7 +6,7 @@ from init_config import app, logger
 from domain_logic.constants import *
 
 
-def auth_service_request(request_type: str, is_valid: bool, endpoint: str, request_data: dict,
+def auth_service_request(request_type: str, is_valid: bool, api_link: str, endpoint: str, request_data: dict,
                          make_authorization: bool, access_token: str = None, possible_error_code: int = 400):
     response = req.Response()
     response._content = {'errors': 'Invalid input'}
@@ -18,11 +18,11 @@ def auth_service_request(request_type: str, is_valid: bool, endpoint: str, reque
 
         logger.info(f'{request_type} request on {endpoint}, data -- {request_data}')
         if request_type == 'GET':
-            response = req.get(url=f'{API_base_link}/{endpoint}',
+            response = req.get(url=f'{api_link}/{endpoint}',
                                headers=headers,
                                params=request_data)
         else:
-            response = req.post(url=f'{API_base_link}/{endpoint}',
+            response = req.post(url=f'{api_link}/{endpoint}',
                                 headers=headers,
                                 data=request_data)
         logger.info(f'Response on the request -- {response.json()}')

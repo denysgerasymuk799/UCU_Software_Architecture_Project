@@ -13,8 +13,6 @@ from fastapi import Depends, FastAPI, HTTPException, status, Request, Response, 
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 from dotenv import load_dotenv
 from Crypto.Util.number import bytes_to_long, long_to_bytes
@@ -22,7 +20,7 @@ from Crypto.Util.number import bytes_to_long, long_to_bytes
 # Import app modules
 from database.db_models import db
 from database.db_models import TokenData, User, UserInDB
-from domain_logic.auth.forms import LoginForm, RegistrationForm
+from domain_logic.auth.forms import LoginForm
 from domain_logic.auth.forms import TransactionForm
 from domain_logic.utils.custom_logger import MyHandler
 from domain_logic.utils.cryptographer import Cryptographer
@@ -180,11 +178,6 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-@app.get("/")
-async def home_page(request: Request):
-    return RedirectResponse(url='/login')
-
-
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
@@ -198,42 +191,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    # response.set_cookie(key="access_token", value=f"Bearer {access_token}",
-    #                     httponly=True)  # set HttpOnly cookie in response
     return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.get("/registration")
-def registration(request: Request):
-    return templates.TemplateResponse("registration.html", {"request": request})
-
-
-@app.post("/registration")
-async def registration(request: Request):
-    print('start POST registration')
-    print(await request.form())
-    form = RegistrationForm(request)
-    await form.load_data()
-    if await form.is_valid():
-        try:
-            form.__dict__.update(msg="Registration is Successful :)")
-            new_user_id = await create_new_user(db, User(**form.__dict__))
-            print('new_user -- ', new_user_id)
-            print('type(new_user_id) -- ', type(new_user_id))
-
-            # response = json.dumps({"new_user_id": str(new_user_id)})
-            # return Response(response, status_code=status.HTTP_201_CREATED)
-            return JSONResponse(status_code=status.HTTP_201_CREATED, content={"new_user_id": str(new_user_id)})
-        except HTTPException as err:
-            form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
-
-    logger.info(form.__dict__.get("errors"))
-    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": form.__dict__.get("errors")})
-
-
-@app.get("/login")
-def login(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.post("/login")
@@ -252,15 +210,6 @@ async def login(request: Request):
     return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"errors": form.__dict__.get("errors")})
 
 
-@app.get("/profile_page")
-def profile_page(request: Request, authorize_response: User = Depends(authorize_user_action)):
-    # Return RedirectResponse on Login page in case failed authorization
-    if isinstance(authorize_response, RedirectResponse):
-        return authorize_response
-    logger.info(f'current_user.email -- {authorize_response.email}')
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
 @app.post("/transactions/handle_transaction")
 async def handle_transaction(request: Request, authorize_response: User = Depends(get_current_active_user)):
     # Return RedirectResponse on Login page in case failed authorization
@@ -271,10 +220,11 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
 
     form = TransactionForm(request)
     await form.load_data()
+    print('form.__dict__ -- ', form.__dict__)
     if form.is_valid():
         host = request.client.host
         port = request.client.port
-        get_test_url = f"http://{host}:8000/transactions/authorize"
+        get_test_url = f"http://{host}:8002/transactions/authorize"
 
         # Send request to authorize user transaction
         data = copy(form.__dict__)

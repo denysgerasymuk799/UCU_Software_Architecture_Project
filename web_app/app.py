@@ -4,6 +4,7 @@ from copy import copy
 from init_config import app
 from domain_logic.forms import LoginForm, TransactionForm
 from domain_logic.utils import auth_service_request, return_response
+from domain_logic.constants import *
 
 
 @app.route('/', methods=['GET'])
@@ -17,7 +18,8 @@ def registration():
         return render_template("registration.html")
 
     # TODO: add validations from the Frontend side
-    response = auth_service_request(request_type='POST', is_valid=True, endpoint='registration',
+    response = auth_service_request(request_type='POST', is_valid=True,
+                                    api_link=REGISTRATION_SERVICE_API_link, endpoint='registration',
                                     request_data=request.form.to_dict(),
                                     make_authorization=False)
     return return_response(is_valid=True, response=response, redirect_endpoint='login')
@@ -31,7 +33,8 @@ def login():
     # TODO: add validations from the Frontend side
     form = LoginForm(request)
     form.load_data()
-    response = auth_service_request(request_type='POST', is_valid=form.is_valid(), endpoint='login',
+    response = auth_service_request(request_type='POST', is_valid=form.is_valid(),
+                                    api_link=AUTH_SERVICE_API_link, endpoint='login',
                                     request_data=request.form.to_dict(),
                                     make_authorization=False, possible_error_code=402)
     if 'access_token' in response.json().keys():
@@ -62,7 +65,7 @@ def handle_transaction():
     request_data.pop('request', None)
     request_data.pop('errors', None)
     response = auth_service_request(request_type='POST', is_valid=form.is_valid(),
-                                    endpoint='transactions/handle_transaction',
+                                    api_link=AUTH_SERVICE_API_link, endpoint='transactions/handle_transaction',
                                     request_data=request_data,
                                     access_token=request.cookies.get('access_token'),
                                     make_authorization=True, possible_error_code=402)
