@@ -79,12 +79,6 @@ async def get_user(email: str):
     raise HTTPException(status_code=404, detail=f"User {email} not found")
 
 
-async def create_new_user(db, user: User):
-    print('user.__dict__ -- ', user.__dict__)
-    new_user = await db["users"].insert_one(user.__dict__)
-    return new_user.inserted_id
-
-
 async def authenticate_user(email: str, password: str):
     user = await get_user(email)
     if not user:
@@ -196,7 +190,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.post("/login")
 async def login(request: Request):
-    print('request -- ', request.form())
+    logger.info(f'Request form -- {request.form()}')
     form = LoginForm(request)
     await form.load_data()
     try:
@@ -216,11 +210,10 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
     if isinstance(authorize_response, RedirectResponse):
         return authorize_response
     logger.info(f'current_user.email -- {authorize_response.email}')
-    print('request.json() -- ', await request.form())
+    logger.info(f'Request form -- {await request.form()}')
 
     form = TransactionForm(request)
     await form.load_data()
-    print('form.__dict__ -- ', form.__dict__)
     if form.is_valid():
         host = request.client.host
         port = request.client.port
