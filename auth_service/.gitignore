@@ -1,3 +1,7 @@
+.env
+test.py
+secrets/*
+
 # Created by https://www.gitignore.io/api/python,pycharm+all
 # Edit at https://www.gitignore.io/?templates=python,pycharm+all
 

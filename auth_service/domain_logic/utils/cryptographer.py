@@ -1,10 +1,12 @@
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
-from Crypto.Util.number import bytes_to_long, long_to_bytes
 
 
 class Cryptographer:
+    """
+    This class is used to make a digital signatures and verify them
+    """
     def __init__(self, public_key_location, private_key_location):
         self.__public_key = RSA.importKey(open(public_key_location, 'rb').read())
         self.__private_key = RSA.importKey(open(private_key_location, 'rb').read())
@@ -33,14 +35,3 @@ class Cryptographer:
             return True
         except (ValueError, TypeError):
             return False
-
-
-if __name__ == '__main__':
-    data = 'Hello, world!'
-    data_bytes = bytes(data, 'utf-8')
-    cryptographer = Cryptographer('../secrets/public_key.pem', '../secrets/private_key.pem')
-    signature = bytes_to_long(cryptographer.sign(data_bytes))
-    print(type(signature))
-    print('signature -- ', signature)
-    signature = long_to_bytes(signature)
-    print(cryptographer.verify(data_bytes, signature))
