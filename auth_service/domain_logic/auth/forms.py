@@ -94,9 +94,12 @@ class TransactionForm:
 
     async def load_data(self):
         form = await self.request.form()
+        self.card_from = form.get("card_from")
+        self.card_from_cvv = form.get("card_from_cvv")
+        self.card_from_exp_date_month = form.get("card_from_exp_date_month")
+        self.card_from_exp_date_year = form.get("card_from_exp_date_year")
+        self.card_to = form.get("card_to")
         self.money_amount = form.get("money_amount")
-        # self.password = form.get("password")
-        print('self.money_amount -- ', self.money_amount)
 
     def is_valid(self):
         if not self.card_from or not self.card_from.isdigit() or not len(self.card_from) == 16:

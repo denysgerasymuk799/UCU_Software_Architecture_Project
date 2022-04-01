@@ -1,0 +1,17 @@
+uvicorn
+fastapi~=0.75.0
+python-jose[cryptography]
+pydantic[email]~=1.9.0
+passlib[bcrypt]~=1.7.4
+pydantic
+python-multipart
+uvicorn
+jinja2
+pymongo~=3.12.3
+motor~=2.5.1
+requests~=2.27.1
+aiohttp~=3.8.1
+PyCryptodome
+python-dotenv~=0.20.0
+dnspython
+asyncio~=3.4.3

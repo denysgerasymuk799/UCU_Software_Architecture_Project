@@ -1,7 +1,7 @@
 import logging
 from flask import Flask
 
-from utils.custom_logger import MyHandler
+from domain_logic.custom_logger import MyHandler
 
 # create main app
 app = Flask(__name__)
