@@ -18,13 +18,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from models import Token, TokenData, User, UserInDB
-from auth.forms import LoginForm, RegistrationForm
+from auth.forms_fastapi import LoginForm, RegistrationForm
 from dotenv import load_dotenv
 from Crypto.Util.number import bytes_to_long, long_to_bytes
 
 # Import app modules
 from database.db_models import db
-from domain_logic.transactions import TransactionForm
+from auth.forms_fastapi import TransactionForm
 from utils.custom_logger import MyHandler
 from utils.cryptographer import Cryptographer
 
@@ -186,7 +186,7 @@ async def home_page(request: Request):
 
 
 @app.post("/token")
-async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -198,8 +198,8 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    response.set_cookie(key="access_token", value=f"Bearer {access_token}",
-                        httponly=True)  # set HttpOnly cookie in response
+    # response.set_cookie(key="access_token", value=f"Bearer {access_token}",
+    #                     httponly=True)  # set HttpOnly cookie in response
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -211,7 +211,7 @@ def registration(request: Request):
 @app.post("/registration")
 async def registration(request: Request):
     print('start POST registration')
-    print(request.json())
+    print(await request.form())
     form = RegistrationForm(request)
     await form.load_data()
     if await form.is_valid():
@@ -224,8 +224,8 @@ async def registration(request: Request):
             # response = json.dumps({"new_user_id": str(new_user_id)})
             # return Response(response, status_code=status.HTTP_201_CREATED)
             return JSONResponse(status_code=status.HTTP_201_CREATED, content={"new_user_id": str(new_user_id)})
-        except HTTPException:
-            pass
+        except HTTPException as err:
+            form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
 
     logger.info(form.__dict__.get("errors"))
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": form.__dict__.get("errors")})
@@ -238,21 +238,18 @@ def login(request: Request):
 
 @app.post("/login")
 async def login(request: Request):
+    print('request -- ', request.form())
     form = LoginForm(request)
     await form.load_data()
-    if await form.is_valid():
-        try:
-            form.__dict__.update(msg="Login Successful :)")
-            response = RedirectResponse(url='/profile_page',
-                                        status_code=status.HTTP_302_FOUND)
-            await login_for_access_token(response=response, form_data=form)
-            return response
-        except HTTPException:
-            pass
+    try:
+        access_token_info = await login_for_access_token(form_data=form)
+        response = JSONResponse(status_code=status.HTTP_302_FOUND, content=access_token_info)
+        return response
+    except HTTPException as err:
+        form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
 
-    form.__dict__.update(msg="")
-    form.__dict__.get("errors").append("Incorrect Email or Password")
-    return templates.TemplateResponse("login.html", form.__dict__)
+    logger.info(form.__dict__.get("errors"))
+    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"errors": form.__dict__.get("errors")})
 
 
 @app.get("/profile_page")
