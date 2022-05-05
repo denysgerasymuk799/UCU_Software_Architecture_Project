@@ -1,0 +1,114 @@
+/* Login */
+
+#left-section {
+	background: linear-gradient(142.87deg, rgb(97, 123, 227) 7%, rgb(111, 27, 218) 85.35%);
+	width: 50%;
+	padding: 150px 40px 50px 60px;
+	color: white;
+	font-family: 'LatoWebBlack';
+	display: inline-block;
+	min-height: 100vh;
+}
+
+#left-section h2 {
+	font-size: 40px;
+}
+
+.login-logo {
+	position: absolute;
+	left: 60px;
+	top: 30px;
+}
+
+.login-logo a {
+	color: white !important;
+}
+
+.login-logo .gray {
+	color: #9CABED !important;
+}
+
+#right-section {
+	width: 49%;
+	display: inline-block;
+	position: absolute;
+	left: 50%;
+	height: 100vh;
+}
+
+.white {
+	background-color: white !important;
+}
+
+#right-section form {
+	padding: 100px;
+	text-align: center;
+	min-width: 200px;
+}
+
+#right-section form h3 {
+	font-size: 23px;
+	margin-bottom: 40px;
+}
+
+.login-btn {
+	width: 100%;
+	padding: 12px;
+	margin-top: 40px;
+}
+
+#pass {
+	margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+	body {
+		position: relative;
+		overflow: hidden;
+	}
+
+	#right-section {
+		width: auto;
+	}
+
+	#right-section form {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background-color: white;
+		padding: 30px;
+		border-radius: 16px;
+		min-width: 50vw;
+	}
+
+	#left-section {
+		width: 100%;
+		height: 100vh;
+	}
+
+	#left-section img {
+		position: absolute;
+		bottom: 0px;
+		right: 0px;
+	}
+
+	#left-section h2 {
+		display: none;
+	}
+
+	.login-logo {
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+}
+
+@media (max-width: 550px) {
+	#right-section form {
+		min-width: 90vw;
+	}
+
+	.login-logo {
+		width: 90vw;
+	}
+}

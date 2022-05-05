@@ -50,6 +50,18 @@ logger.addHandler(MyHandler())
 # Create app object
 app = FastAPI()
 
+cors = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
+}
+
+
+@app.options("/{full_path:path}")
+async def options():
+    return JSONResponse(status_code=status.HTTP_200_OK, headers=cors)
+
 
 async def get_json(client, url, headers, data):
     """
@@ -190,18 +202,18 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.post("/login")
 async def login(request: Request):
-    logger.info(f'Request form -- {request.form()}')
+    logger.info(f'Request form -- {await request.form()}')
     form = LoginForm(request)
     await form.load_data()
     try:
         access_token_info = await login_for_access_token(form_data=form)
-        response = JSONResponse(status_code=status.HTTP_302_FOUND, content=access_token_info)
+        response = JSONResponse(status_code=status.HTTP_200_OK, headers=cors, content=access_token_info)
         return response
     except HTTPException as err:
         form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
 
     logger.info(f'Request errors: {form.__dict__.get("errors")}')
-    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"errors": form.__dict__.get("errors")})
+    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, headers=cors, content={"errors": form.__dict__.get("errors")})
 
 
 @app.post("/transactions/handle_transaction")
@@ -246,7 +258,7 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
             msg = "Transaction is not verified!"
         logger.info(msg)
         return JSONResponse(content={'content': msg}, status_code=200)
-    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": form.__dict__.get("errors")})
+    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, headers=cors, content={"errors": form.__dict__.get("errors")})
 
 
 @app.get("/transactions/authorize")
@@ -259,4 +271,4 @@ async def authorize_transaction(request: Request, current_user: User = Depends(g
     request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
     request_body['validated'] = True
     response = json.dumps(request_body)
-    return Response(response, status_code=200)
+    return Response(response, headers=cors, status_code=200)
