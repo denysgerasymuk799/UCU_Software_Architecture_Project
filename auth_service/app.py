@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 from fastapi import Depends, FastAPI, HTTPException, status, Request, Response, Cookie
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import RedirectResponse
 
 from dotenv import load_dotenv
 from Crypto.Util.number import bytes_to_long, long_to_bytes
@@ -68,6 +67,14 @@ async def get_json(client, url, headers, data):
     Make asynchronous GET request
     """
     async with client.get(url, headers=headers, json=data) as response:
+        return await response.read()
+
+
+async def post_request(client, url, headers, data):
+    """
+    Make asynchronous POST request
+    """
+    async with client.post(url, headers=headers, data=data) as response:
         return await response.read()
 
 
@@ -131,21 +138,24 @@ async def authorize_user(access_token):
         logger.info(f'payload -- {payload}')
         email: str = payload.get("sub")
         if email is None:
+            msg = f'HTTPException: {credentials_exception.detail}'
             logger.error('email is None')
             # raise credentials_exception
-            logger.error(f'HTTPException: {credentials_exception.detail}')
-            return RedirectResponse(url='/login')
+            logger.error(msg)
+            return Response(msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
         token_data = TokenData(email=email)
     except JWTError as err:
+        msg = f'JWTError: {err}\n' + f'HTTPException: {credentials_exception.detail}'
         # TODO: add Not authorized to login page and return it in this case
         logger.error(f'JWTError: {err}')
         logger.error(f'HTTPException: {credentials_exception.detail}')
-        return RedirectResponse(url='/login')
+        return Response(msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
     user = await get_user(email=token_data.email)
     if user is None:
+        msg = f'HTTPException: {credentials_exception.detail}'
         logger.error('user is None')
-        logger.error(f'HTTPException: {credentials_exception.detail}')
-        return RedirectResponse(url='/login')
+        logger.error(msg)
+        return Response(msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
     return user
 
 
@@ -175,8 +185,8 @@ async def authorize_user_action(access_token: Optional[str] = Cookie(None)):
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    # Return RedirectResponse on Login page in case failed authorization
-    if isinstance(current_user, RedirectResponse):
+    # Return Response on Login page in case failed authorization
+    if isinstance(current_user, Response):
         return current_user
     if current_user.disabled:
         logger.error('HTTPException: Inactive user')
@@ -219,8 +229,8 @@ async def login(request: Request):
 
 @app.post("/transactions/handle_transaction")
 async def handle_transaction(request: Request, authorize_response: User = Depends(get_current_active_user)):
-    # Return RedirectResponse on Login page in case failed authorization
-    if isinstance(authorize_response, RedirectResponse):
+    # Return Response on Login page in case failed authorization
+    if isinstance(authorize_response, Response):
         return authorize_response
     logger.info(f'current_user.email -- {authorize_response.email}')
     logger.info(f'Request form -- {await request.form()}')
@@ -230,8 +240,9 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
     if form.is_valid():
         host = request.client.host
         port = request.client.port
-        # get_test_url = f"http://{host}:8002/transactions/authorize"
-        get_test_url = f"https://l85l2ph68g.execute-api.eu-central-1.amazonaws.com/api/auth-service/transactions/authorize"
+        # get_test_url = f"http://{host}:8002/authorize"
+        # get_test_url = "https://l85l2ph68g.execute-api.eu-central-1.amazonaws.com/api/auth-service/authorize"
+        get_test_url = "http://a211556410a9342dca69672f9841dd8c-b2d18fc2c3e77830.elb.eu-central-1.amazonaws.com/auth-service/authorize"
 
         # Send request to authorize user transaction
         data = copy(form.__dict__)
@@ -239,14 +250,15 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
         data.pop('errors', None)
         data['validated'] = False
         data['signature'] = None
-        authorizer_response = await get_json(client, get_test_url,
-                                             headers={"Authorization": request.headers['Authorization'],
-                                                      "Accept": "application/json"},
-                                             data=data)
+        authorizer_response = await post_request(client, get_test_url,
+                                                 headers={"Authorization": request.headers['Authorization'],
+                                                          "Accept": "application/json"},
+                                                 data=data)
 
         # Process response to get result
         authorizer_response = authorizer_response.decode("utf-8")
         authorizer_response = json.loads(authorizer_response)
+        print(f'authorizer_response --  {authorizer_response}')
         signature = long_to_bytes(authorizer_response['signature'])
 
         check_data = copy(data)
@@ -264,13 +276,20 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
                         content={"errors": form.__dict__.get("errors")})
 
 
-@app.get("/transactions/authorize")
+@app.post("/authorize")
 async def authorize_transaction(request: Request, current_user: User = Depends(get_current_active_user)):
+    if isinstance(current_user, Response):
+        return current_user
+
     request_body = await request.json()
     logger.info(f'Request -- {request_body}')
     logger.info(f'current_user.email -- {current_user.email}')
+    content_to_hash = ''
+    for key in ['card_from', 'card_from_cvv', 'card_from_exp_date_month',
+                'card_from_exp_date_year', 'card_to', 'money_amount']:
+        content_to_hash += request_body[key]
 
-    request_body_bytes = bytes(str(request_body), 'utf-8')
+    request_body_bytes = bytes(str(content_to_hash), 'utf-8')
     request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
     request_body['validated'] = True
     response = json.dumps(request_body)

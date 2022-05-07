@@ -9,4 +9,4 @@ RUN pip install --upgrade pip
 
 RUN pip install -r ./requirements.txt
 
-CMD uvicorn --host 0.0.0.0 --port 8003 --workers 2 app:app
+CMD uvicorn --host 0.0.0.0 --port 8003 --workers 4 app:app

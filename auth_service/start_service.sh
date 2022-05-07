@@ -1,0 +1,1 @@
+uvicorn app:app --workers 2 --reload --port 8002

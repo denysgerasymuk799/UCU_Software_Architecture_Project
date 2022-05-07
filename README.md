@@ -23,6 +23,7 @@ pip install -r requirements.txt
 
 gunicorn --bind 127.0.0.1:8000  app:app
 
+
 # Start the Auth Service
 python3.8 -m venv auth_service_venv
 source auth_service_venv/bin/activate
@@ -32,6 +33,7 @@ pip install -r requirements.txt
 # Use vpn-eu
 uvicorn app:app --workers 2 --reload --port 8002
 
+
 # Start the Registration Service
 python3.8 -m venv registration_service_venv
 source registration_service_venv/bin/activate
@@ -40,6 +42,15 @@ pip install -r requirements.txt
 # Do not forget to add .env file
 uvicorn app:app --workers 2 --reload --port 8003
 
+
+# Start the Registration Service
+python3.8 -m venv transaction_service_venv
+source transaction_service_venv/bin/activate
+pip install -r requirements.txt
+
+# Do not forget to add .env file
+uvicorn app:app --workers 2 --reload --port 8004
+
 # Test user credentials located in /auth_service/.env
 ```
 
@@ -47,6 +58,8 @@ uvicorn app:app --workers 2 --reload --port 8003
 
 ```shell
 # Main reference -- https://docs.cortex.dev/workloads/async/example
+
+aws ecr create-repository --repository-name auth-service
 
 # Current value
 AWS_ACCOUNT_ID=218145147595
@@ -74,6 +87,7 @@ http://<operator_url>/dashboard
 
 # Connect to Kubernetes with kubectl
 https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/
+aws eks --region eu-central-1 update-kubeconfig --name web-banking
 
 # To find logs, go to your account Cloudwatch
 
