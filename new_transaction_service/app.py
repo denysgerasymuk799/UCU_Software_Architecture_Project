@@ -16,8 +16,9 @@ from domain_logic.utils.cryptographer import Cryptographer
 
 # Prepare own helper class objects
 logger = logging.getLogger('root')
-logger.setLevel('INFO')
-logging.disable(logging.DEBUG)
+logger.setLevel('DEBUG')
+# logger.setLevel('INFO')
+# logging.disable(logging.DEBUG)
 logger.addHandler(CustomHandler())
 
 # Add logic for asynchronous requests
@@ -48,15 +49,7 @@ async def post_request(client, url, headers, data):
         return await response.read()
 
 
-@app.options("/{full_path:path}")
-async def options():
-    return JSONResponse(status_code=status.HTTP_200_OK, headers=cors)
-
-
-@app.post("/handle_transaction")
-async def handle_transaction(request: Request):
-    form = await request.form()
-
+async def validate_token(form, request):
     # Send request to authorize user transaction
     data = copy(form.__dict__['_dict'])
     data.pop('request', None)
@@ -73,14 +66,14 @@ async def handle_transaction(request: Request):
     # Process response to get result
     authorizer_response = authorizer_response.decode("utf-8")
     authorizer_response = json.loads(authorizer_response)
-    print(f'authorizer_response --  {authorizer_response}')
+    logger.debug(f'authorizer_response --  {authorizer_response}')
     signature = long_to_bytes(authorizer_response['signature'])
 
     check_data = copy(data)
     check_data['validated'] = False
     check_data['signature'] = None
 
-    print('check_data -- ', check_data)
+    logger.debug(f'check_data -- {check_data}')
     content_to_hash = ''
     for key in ['card_from', 'card_from_cvv', 'card_from_exp_date_month',
                 'card_from_exp_date_year', 'card_to', 'money_amount']:
@@ -89,7 +82,26 @@ async def handle_transaction(request: Request):
     # Check if user transaction is authorized
     if cryptographer.verify(bytes(str(content_to_hash), 'utf-8'), signature):
         msg = "Transaction is verified!"
+        is_valid_token = True
     else:
-        msg = "Transaction is not verified!"
+        msg = "Transaction is not verified, since token is invalid!"
+        is_valid_token = False
     logger.info(msg)
+    return is_valid_token, msg
+
+
+@app.options("/{full_path:path}")
+async def options():
+    return JSONResponse(status_code=status.HTTP_200_OK, headers=cors)
+
+
+@app.post("/handle_transaction")
+async def handle_transaction(request: Request):
+    form = await request.form()
+    is_valid_token, msg = await validate_token(form, request)
+    if not is_valid_token:
+        JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+
+
     return JSONResponse(content={'content': msg}, status_code=status.HTTP_200_OK, headers=cors)
