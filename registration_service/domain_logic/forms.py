@@ -23,6 +23,7 @@ class RegistrationForm:
         self.city: Optional[str] = None
         self.address: Optional[str] = None
         self.disabled: Optional[bool] = None
+        self.role: Optional[str] = None
 
     async def load_data(self):
         form = await self.request.form()

@@ -27,20 +27,24 @@ cors = {
     'Allow': 'POST, OPTIONS'
 }
 
+
 async def create_new_user(db, user: User):
     logger.info(f'Insert a new user with the next info -- {user.__dict__}')
     new_user = await db["users"].insert_one(user.__dict__)
     return new_user.inserted_id
 
+
 @app.options("/{full_path:path}")
 async def options():
     return JSONResponse(status_code=status.HTTP_200_OK, headers=cors)
+
 
 @app.post("/registration")
 async def registration(request: Request):
     logger.info('Start POST registration')
     logger.info(f'Got request form -- {await request.form()}')
     form = RegistrationForm(request)
+    form.role = 'simple_user'
     await form.load_data()
     if await form.is_valid():
         try:

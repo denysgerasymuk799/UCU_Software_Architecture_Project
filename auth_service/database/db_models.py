@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
-client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URL"))
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URL"),
+                                                serverSelectionTimeoutMS=60_000,
+                                                tls=True, tlsAllowInvalidCertificates=True)
 db = client.web_banking
 
 

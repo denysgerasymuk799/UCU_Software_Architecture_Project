@@ -213,7 +213,8 @@ async def login(request: Request):
         form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
 
     logger.info(f'Request errors: {form.__dict__.get("errors")}')
-    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, headers=cors, content={"errors": form.__dict__.get("errors")})
+    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, headers=cors,
+                        content={"errors": form.__dict__.get("errors")})
 
 
 @app.post("/transactions/handle_transaction")
@@ -229,7 +230,8 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
     if form.is_valid():
         host = request.client.host
         port = request.client.port
-        get_test_url = f"http://{host}:8002/transactions/authorize"
+        # get_test_url = f"http://{host}:8002/transactions/authorize"
+        get_test_url = f"https://l85l2ph68g.execute-api.eu-central-1.amazonaws.com/api/auth-service/transactions/authorize"
 
         # Send request to authorize user transaction
         data = copy(form.__dict__)
@@ -258,7 +260,8 @@ async def handle_transaction(request: Request, authorize_response: User = Depend
             msg = "Transaction is not verified!"
         logger.info(msg)
         return JSONResponse(content={'content': msg}, status_code=200)
-    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, headers=cors, content={"errors": form.__dict__.get("errors")})
+    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, headers=cors,
+                        content={"errors": form.__dict__.get("errors")})
 
 
 @app.get("/transactions/authorize")
