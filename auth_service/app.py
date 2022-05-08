@@ -214,6 +214,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def login(request: Request):
     logger.info(f'Request form -- {await request.form()}')
     form = LoginForm(request)
+    print('form_data.username -- ', form.username)
+    print('form_data.password -- ', form.password)
     await form.load_data()
     try:
         access_token_info = await login_for_access_token(form_data=form)
@@ -227,55 +229,6 @@ async def login(request: Request):
                         content={"errors": form.__dict__.get("errors")})
 
 
-@app.post("/transactions/handle_transaction")
-async def handle_transaction(request: Request, authorize_response: User = Depends(get_current_active_user)):
-    # Return Response on Login page in case failed authorization
-    if isinstance(authorize_response, Response):
-        return authorize_response
-    logger.info(f'current_user.email -- {authorize_response.email}')
-    logger.info(f'Request form -- {await request.form()}')
-
-    form = TransactionForm(request)
-    await form.load_data()
-    if form.is_valid():
-        host = request.client.host
-        port = request.client.port
-        # get_test_url = f"http://{host}:8002/authorize"
-        # get_test_url = "https://l85l2ph68g.execute-api.eu-central-1.amazonaws.com/api/auth-service/authorize"
-        get_test_url = "http://a211556410a9342dca69672f9841dd8c-b2d18fc2c3e77830.elb.eu-central-1.amazonaws.com/auth-service/authorize"
-
-        # Send request to authorize user transaction
-        data = copy(form.__dict__)
-        data.pop('request', None)
-        data.pop('errors', None)
-        data['validated'] = False
-        data['signature'] = None
-        authorizer_response = await post_request(client, get_test_url,
-                                                 headers={"Authorization": request.headers['Authorization'],
-                                                          "Accept": "application/json"},
-                                                 data=data)
-
-        # Process response to get result
-        authorizer_response = authorizer_response.decode("utf-8")
-        authorizer_response = json.loads(authorizer_response)
-        print(f'authorizer_response --  {authorizer_response}')
-        signature = long_to_bytes(authorizer_response['signature'])
-
-        check_data = copy(data)
-        check_data['validated'] = False
-        check_data['signature'] = None
-
-        # Check if user transaction is authorized
-        if cryptographer.verify(bytes(str(check_data), 'utf-8'), signature):
-            msg = "Transaction is verified!"
-        else:
-            msg = "Transaction is not verified!"
-        logger.info(msg)
-        return JSONResponse(content={'content': msg}, status_code=200)
-    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, headers=cors,
-                        content={"errors": form.__dict__.get("errors")})
-
-
 @app.post("/authorize")
 async def authorize_transaction(request: Request, current_user: User = Depends(get_current_active_user)):
     if isinstance(current_user, Response):
@@ -285,8 +238,7 @@ async def authorize_transaction(request: Request, current_user: User = Depends(g
     logger.info(f'Request -- {request_body}')
     logger.info(f'current_user.email -- {current_user.email}')
     content_to_hash = ''
-    for key in ['card_from', 'card_from_cvv', 'card_from_exp_date_month',
-                'card_from_exp_date_year', 'card_to', 'money_amount']:
+    for key in ['cardholder_id', 'receiver_id', 'money_amount']:
         content_to_hash += request_body[key]
 
     request_body_bytes = bytes(str(content_to_hash), 'utf-8')

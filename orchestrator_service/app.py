@@ -73,9 +73,10 @@ async def validate_token(form, request):
     check_data['signature'] = None
 
     logger.debug(f'check_data -- {check_data}')
+    # Collect content to hash and use it for verification of digital signature from auth service side.
+    # The same set of fields is used on auth service side
     content_to_hash = ''
-    for key in ['card_from', 'card_from_cvv', 'card_from_exp_date_month',
-                'card_from_exp_date_year', 'card_to', 'money_amount']:
+    for key in ['cardholder_id', 'receiver_id', 'money_amount']:
         content_to_hash += check_data[key]
 
     # Check if user transaction is authorized
@@ -101,8 +102,10 @@ async def handle_transaction(request: Request):
     if not is_valid_token:
         JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
+    request_params = form.__dict__['_dict']
     transaction_id = str(uuid.uuid1())
     producer = ServiceProducer("ServiceProducer")
+
     message_ = {
         "eventName": Events.TRANSACTION_REQUEST.value,
         "messageType": MESSAGE_TYPE_REQUEST,
@@ -111,11 +114,9 @@ async def handle_transaction(request: Request):
         "message": "",
         "data": {
             "user_transaction_id": transaction_id,
-            # "cardholder_id": "624f270467c299bf18be0d53",
-            # "cardholder_id": "624c9fd444860672aad26353",  # do not have money
-            "cardholder_id": "624f26708793375ceb2214f1",
-            "receiver_id": "624f270467c299bf18be0d55",
-            "amount": 867,
+            "cardholder_id": request_params['cardholder_id'],
+            "receiver_id": request_params['receiver_id'],
+            "amount": request_params['money_amount'],
         }
     }
     await producer.send("TransactionService", message_)

@@ -19,7 +19,7 @@ class LoginForm:
     async def load_data(self):
         form = await self.request.form()
         self.username = form.get(
-            "email"
+            "username"
         )  # since auth works on username field we are considering email as username
         self.password = form.get("password")
 
