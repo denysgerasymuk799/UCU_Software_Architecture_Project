@@ -29,7 +29,7 @@ class ReservedTransaction(BaseModel):
 
 class TransactionServiceDatabase:
     """
-    MongoDB instanse available for the TransactionService.
+    MongoDB instance available for the TransactionService.
     """
     def __init__(self, database):
         self.__db = database
@@ -52,7 +52,7 @@ class TransactionServiceDatabase:
 
 class WalletServiceDatabase:
     """
-    MongoDB instanse available for the WalletService.
+    MongoDB instance available for the WalletService.
     """
     def __init__(self, database):
         self.__db = database
