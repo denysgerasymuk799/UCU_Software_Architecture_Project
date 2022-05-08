@@ -2,12 +2,15 @@ import asyncio
 import logging
 
 from domain_logic.utils.custom_logger import CustomHandler
+from domain_logic.__constants import *
 
-loop2 = asyncio.get_event_loop()
+kafka_loop = asyncio.get_event_loop()
 
 # Prepare own helper class objects
 logger = logging.getLogger('root')
-logger.setLevel('DEBUG')
-# logger.setLevel('INFO')
-# logging.disable(logging.DEBUG)
+if DEBUG_MODE:
+    logger.setLevel('DEBUG')
+else:
+    logger.setLevel('INFO')
+    logging.disable(logging.DEBUG)
 logger.addHandler(CustomHandler())

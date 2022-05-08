@@ -10,14 +10,17 @@ from fastapi.responses import JSONResponse
 from Crypto.Util.number import long_to_bytes
 
 # Import app modules
+from config import logger
 from domain_logic.__constants import *
 from domain_logic.utils.cryptographer import Cryptographer
 from domain_logic.kafka.service_producer import ServiceProducer
-from config import logger
+from domain_logic.kafka.result_consumer import consume_results
 
 
 # Create app object
 app = FastAPI()
+
+asyncio.create_task(consume_results)
 
 # Add logic for asynchronous requests
 loop = asyncio.get_event_loop()

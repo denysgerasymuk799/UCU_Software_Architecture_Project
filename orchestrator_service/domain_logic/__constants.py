@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
+# ------------- Constants to setup --------------
+DEBUG_MODE = False
 # ------------- Service Links --------------
 MONGODB_URL = os.getenv("MONGODB_URL")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
@@ -13,6 +15,11 @@ CONSUMER_GROUP = "tr_group"
 # ------------------ Kafka Topics -------------------
 TRANSACTIONS_TOPIC = "TransactionService"
 WALLET_TOPIC = "WalletService"
+ALL_RESULTS_TOPIC = "AllResultsTopic"
+KAFKA_CONSUMER_GROUP = "result_consumer_group"
+# ------------- S3 Credentials --------------
+ORCHESTRATOR_USER_PUBLIC_KEY = os.getenv("ORCHESTRATOR_USER_PUBLIC_KEY")
+ORCHESTRATOR_USER_SECRET_KEY = os.getenv("ORCHESTRATOR_USER_SECRET_KEY")
 # ------------- Message Body Variables --------------
 RESPONSE_SUCCESS = 200
 MESSAGE_TYPE_RESPONSE = "Response"
