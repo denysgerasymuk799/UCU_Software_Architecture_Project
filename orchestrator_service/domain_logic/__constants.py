@@ -20,6 +20,7 @@ KAFKA_CONSUMER_GROUP = "result_consumer_group"
 # ------------- S3 Credentials --------------
 ORCHESTRATOR_USER_PUBLIC_KEY = os.getenv("ORCHESTRATOR_USER_PUBLIC_KEY")
 ORCHESTRATOR_USER_SECRET_KEY = os.getenv("ORCHESTRATOR_USER_SECRET_KEY")
+RESULTS_BUCKET_NAME = os.getenv("RESULTS_BUCKET_NAME")
 # ------------- Message Body Variables --------------
 RESPONSE_SUCCESS = 200
 MESSAGE_TYPE_RESPONSE = "Response"

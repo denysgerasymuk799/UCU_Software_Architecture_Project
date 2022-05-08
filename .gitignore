@@ -7,6 +7,9 @@
 
 cortex.yaml
 *_venv
+transaction-service-data
+wallet-service-data
+.env
 
 doc/build/*
 doc/_build/*

@@ -38,7 +38,7 @@ async def process_transactions(records):
             await wallet_service.reserve_balance(data, transaction_topic_obj)
         elif event == Events.TRANSACTION_PENDING.value:
             await wallet_service.process_payment(data, transaction_topic_obj)
-        elif event == Events.RESERVATION_CANCELL.value:
+        elif event == Events.RESERVATION_CANCEL.value:
             await wallet_service.cancel_reservation(data, transaction_topic_obj)
 
     # TODO: consumer.commit???

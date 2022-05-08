@@ -16,10 +16,15 @@ CONSUMER_GROUP = "tr_group"
 # ------------------ Kafka Topics -------------------
 TRANSACTIONS_TOPIC = "TransactionService"
 WALLET_TOPIC = "WalletService"
+ALL_RESULTS_TOPIC = "AllResultsTopic"
 # ------------- Message Body Variables --------------
 RESPONSE_SUCCESS = 200
 MESSAGE_TYPE_RESPONSE = "Response"
 MESSAGE_TYPE_REQUEST = "Request"
+TRANSACTION_NEW_STATUS = "NEW"
+TRANSACTION_PENDING_STATUS = "PENDING"
+TRANSACTION_COMPLETED_STATUS = "COMPLETED"
+TRANSACTION_FAILED_STATUS = "FAILED"
 # ---------------- Logger Constants -----------------
 LOGS_PATH = "../logs/"
 WALLET_SERVICE_PRODUCER_NAME = "WalletServiceProducer"
@@ -41,7 +46,7 @@ class Events(Enum):
     TRANSACTION_CREATED = "EventTransactionCreated"
     RESERVATION_SUCCESS = "EventReservationSuccess"
     RESERVATION_FAILURE = "EventReservationFailure"
-    RESERVATION_CANCELL = "EventReservationCancell"
+    RESERVATION_CANCEL = "EventReservationCancel"
     TRANSACTION_PENDING = "EventTransactionPending"
     TRANSACTION_SUCCESS = "EventTransactionSuccess"
     TRANSACTION_FAILURE = "EventTransactionFailure"

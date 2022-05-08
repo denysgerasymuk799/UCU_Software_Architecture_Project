@@ -65,7 +65,7 @@ class WalletServiceDatabase:
         transaction = await self.__db[RESERVED_TABLE].find_one({"_id": ObjectId(transaction_id)})
         if not transaction:
             return False
-        # Get wallet instanse to carry operation on.
+        # Get wallet instance to carry operation on.
         wallet = await self.__db[WALLET_TABLE].find_one({"_id": ObjectId(transaction["wallet_id"])})
 
         # Pay out money for the transaction.
@@ -78,12 +78,12 @@ class WalletServiceDatabase:
 
         # Delete transaction from reserved.
         for _ in range(NUM_RETRIES):
-            response = await self.calcel_reservation(transaction_id)
+            response = await self.cancel_reservation(transaction_id)
             if response:
                 return True
             time.sleep(1)
         return response
 
-    async def calcel_reservation(self, transaction_id):
+    async def cancel_reservation(self, transaction_id):
         response = await self.__db[RESERVED_TABLE].delete_one({"_id": ObjectId(transaction_id)})
         return response.acknowledged

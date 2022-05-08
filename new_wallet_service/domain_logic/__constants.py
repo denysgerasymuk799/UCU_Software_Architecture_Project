@@ -41,7 +41,7 @@ class Events(Enum):
     TRANSACTION_CREATED = "EventTransactionCreated"
     RESERVATION_SUCCESS = "EventReservationSuccess"
     RESERVATION_FAILURE = "EventReservationFailure"
-    RESERVATION_CANCELL = "EventReservationCancell"
+    RESERVATION_CANCELL = "EventReservationCancel"
     TRANSACTION_PENDING = "EventTransactionPending"
     TRANSACTION_SUCCESS = "EventTransactionSuccess"
     TRANSACTION_FAILURE = "EventTransactionFailure"

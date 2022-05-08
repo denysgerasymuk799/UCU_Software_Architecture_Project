@@ -13,6 +13,12 @@
 since links to microservices are temporary hardcoded:
 
 ```shell
+# Create Kafka topics
+kafka-topics --zookeeper 127.0.0.1:2181  --topic TransactionService --create --partitions 3 --replication-factor 1
+
+# Read messages from topics with Kafka consumer CLI
+kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic TransactionService --from-beginning
+
 # Start the web app
 # Firstly, create a new virtual env
 # https://www.linuxcapable.com/how-to-setup-python-3-virtual-environment-on-ubuntu-20-04/
@@ -59,7 +65,7 @@ uvicorn app:app --workers 2 --reload --port 8004
 ```shell
 # Main reference -- https://docs.cortex.dev/workloads/async/example
 
-aws ecr create-repository --repository-name auth-service
+aws ecr create-repository --repository-name web_banking_auth_service
 
 # Current value
 AWS_ACCOUNT_ID=218145147595

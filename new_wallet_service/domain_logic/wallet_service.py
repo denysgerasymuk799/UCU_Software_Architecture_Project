@@ -22,7 +22,7 @@ class WalletService:
         )
 
         # Try reserve money.
-        transaction_id = await self.__db.reserve_transaction_amount(data["transaction_id"], transaction)
+        transaction_id = await self.__db.reserve_transaction_amount(data["temp_transaction_id"], transaction)
 
         # Mark operation event as successful if reserved.
         if transaction_id:
@@ -40,7 +40,7 @@ class WalletService:
             "producer":     WALLET_SERVICE_PRODUCER_NAME,
             "message":      message,
             "data":         {
-                "transaction_id": data["transaction_id"]
+                "temp_transaction_id": data["temp_transaction_id"]
             }
         }
         await transaction_topic_obj.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
@@ -48,7 +48,7 @@ class WalletService:
 
     async def process_payment(self, data, transaction_topic_obj):
         # Try execute transaction.
-        response = await self.__db.execute_transaction(data["transaction_id"])
+        response = await self.__db.execute_transaction(data["temp_transaction_id"])
         if response:
             event_name = Events.TRANSACTION_SUCCESS.value
             message = "Operation success."
@@ -64,14 +64,14 @@ class WalletService:
             "producer": WALLET_SERVICE_PRODUCER_NAME,
             "message": message,
             "data": {
-                "transaction_id": data["transaction_id"]
+                "temp_transaction_id": data["temp_transaction_id"]
             }
         }
         await transaction_topic_obj.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
-        self.__logger.info(f"Transaction: [{data['transaction_id']}]. Status: COMPLETE.")
+        self.__logger.info(f"Transaction: [{data['temp_transaction_id']}]. Status: COMPLETE.")
 
     async def cancel_reservation(self, data, transaction_topic_obj):
-        response = self.__db.calcel_reservation(data["transaction_id"])
+        response = self.__db.cancel_reservation(data["temp_transaction_id"])
         if response:
             event_name = Events.TRANSACTION_CANCELLED.value
             message = "Operation success."
@@ -87,8 +87,8 @@ class WalletService:
             "producer": WALLET_SERVICE_PRODUCER_NAME,
             "message": message,
             "data": {
-                "transaction_id": data["transaction_id"]
+                "temp_transaction_id": data["temp_transaction_id"]
             }
         }
         await transaction_topic_obj.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
-        self.__logger.info(f"Transaction: [{data['transaction_id']}]. Status: CANCELLED.")
+        self.__logger.info(f"Transaction: [{data['temp_transaction_id']}]. Status: CANCELLED.")

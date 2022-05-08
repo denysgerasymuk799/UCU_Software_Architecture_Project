@@ -20,6 +20,7 @@ app = faust.App('transaction-service',
                 web_port=FAUST_PORT)
 transaction_topic_obj = app.topic(TRANSACTIONS_TOPIC)
 wallet_topic_obj = app.topic(WALLET_TOPIC)
+all_results_topic_obj = app.topic(ALL_RESULTS_TOPIC)
 transaction_service = TransactionService()
 
 
@@ -40,8 +41,9 @@ async def process_transactions(records):
         elif event == Events.RESERVATION_SUCCESS.value:
             await transaction_service.execute_transaction(data, wallet_topic_obj)
         elif event == Events.TRANSACTION_SUCCESS.value:
-            await transaction_service.mark_transaction_complete(data)
+            await transaction_service.mark_transaction_complete(data, all_results_topic_obj)
         else:
-            logger.info(f"Transaction: [{data['transaction_id']}]. Event: [{event}]")
+            await transaction_service.mark_transaction_failed(data, all_results_topic_obj)
+            logger.info(f"Transaction: [{data['temp_transaction_id']}]. Event: [{event}]")
 
     # TODO: consumer.commit???

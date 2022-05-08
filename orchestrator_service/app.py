@@ -1,3 +1,4 @@
+import uuid
 import json
 import time
 import aiohttp
@@ -20,7 +21,7 @@ from domain_logic.kafka.result_consumer import consume_results
 # Create app object
 app = FastAPI()
 
-asyncio.create_task(consume_results)
+asyncio.create_task(consume_results())
 
 # Add logic for asynchronous requests
 loop = asyncio.get_event_loop()
@@ -100,6 +101,7 @@ async def handle_transaction(request: Request):
     if not is_valid_token:
         JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
+    transaction_id = str(uuid.uuid1())
     producer = ServiceProducer("ServiceProducer")
     message_ = {
         "eventName": Events.TRANSACTION_REQUEST.value,
@@ -108,7 +110,10 @@ async def handle_transaction(request: Request):
         "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
         "message": "",
         "data": {
-            "cardholder_id": "624f270467c299bf18be0d53",
+            "user_transaction_id": transaction_id,
+            # "cardholder_id": "624f270467c299bf18be0d53",
+            # "cardholder_id": "624c9fd444860672aad26353",  # do not have money
+            "cardholder_id": "624f26708793375ceb2214f1",
             "receiver_id": "624f270467c299bf18be0d55",
             "amount": 867,
         }
@@ -116,21 +121,4 @@ async def handle_transaction(request: Request):
     await producer.send("TransactionService", message_)
     logger.info(f'The next message is sent -- {message_}')
 
-    time.sleep(1)
-    # 3655
-    message_ = {
-        "eventName": Events.TRANSACTION_REQUEST.value,
-        "messageType": MESSAGE_TYPE_REQUEST,
-        "responseType": RESPONSE_SUCCESS,
-        "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
-        "message": "",
-        "data": {
-            "cardholder_id": "624f270467c299bf18be0d53",
-            "receiver_id": "624f270467c299bf18be0d56",
-            "amount": 127,
-        }
-    }
-    await producer.send("TransactionService", message_)
-    logger.info(f'The next message is sent -- {message_}')
-
-    return JSONResponse(content={'content': msg}, status_code=status.HTTP_200_OK, headers=cors)
+    return JSONResponse(content={'transaction_id': transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
