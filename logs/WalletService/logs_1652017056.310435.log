@@ -1,4 +1,0 @@
-✅ [INFO] - [2022-05-08 19:37:45] - (wallet_service.py).reserve_balance(47): Transaction: [6277f1d8b9d97645f9e070ca]. Status: RESERVED.
-✅ [INFO] - [2022-05-08 19:37:46] - (wallet_service.py).reserve_balance(47): Transaction: [6277f1d9b9d97645f9e070cb]. Status: RESERVED.
-✅ [INFO] - [2022-05-08 19:37:46] - (wallet_service.py).process_payment(71): Transaction: [6277f1d8b9d97645f9e070ca]. Status: COMPLETE.
-✅ [INFO] - [2022-05-08 19:37:46] - (wallet_service.py).process_payment(71): Transaction: [6277f1d9b9d97645f9e070cb]. Status: COMPLETE.

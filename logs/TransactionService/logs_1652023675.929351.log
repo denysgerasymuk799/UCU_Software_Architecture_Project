@@ -1,2 +1,0 @@
-✅ [INFO] - [2022-05-08 21:27:59] - (transaction_service.py).create_transaction(41): Transaction: [62780bafafc8927a83413b19]. Status: NEW.
-✅ [INFO] - [2022-05-08 21:27:59] - (transaction_service.py).mark_transaction_failed(96): Transaction: [62780bafafc8927a83413b19]. Status: FAILED.

@@ -1,2 +1,0 @@
-✅ [INFO] - [2022-05-08 19:34:44] - (transaction_service.py).create_transaction(39): Transaction: [6277f12488d1ab25e698281b]. Status: NEW.
-✅ [INFO] - [2022-05-08 19:34:45] - (transaction_service.py).create_transaction(39): Transaction: [6277f12588d1ab25e698281c]. Status: NEW.

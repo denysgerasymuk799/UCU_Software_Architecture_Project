@@ -58,6 +58,11 @@ pip install -r requirements.txt
 uvicorn app:app --workers 2 --reload --port 8004
 
 # Test user credentials located in /auth_service/.env
+
+# Start transaction or wallet_service
+# 1) enter python virtual env
+pip install -r requirements.txt
+faust -A kafka_streams worker -l info
 ```
 
 ### How to deploy the project
@@ -92,11 +97,11 @@ cortex cluster info
 http://<operator_url>/dashboard
 
 # Connect to Kubernetes with kubectl
-https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/
+# https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/
 aws eks --region eu-central-1 update-kubeconfig --name web-banking
 
 # To find logs, go to your account Cloudwatch
 
 # ECR login
-aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 218145147595.dkr.ecr.eu-central-1.amazonaws.com
 ```
