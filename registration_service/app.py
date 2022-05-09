@@ -36,8 +36,10 @@ cors = {
 
 
 async def create_new_user(db, user: User):
-    logger.info(f'Insert a new user with the next info -- {user.__dict__}')
-    new_user = await db[REGISTERED_USERS_TABLE].insert_one(user.__dict__)
+    user_info = user.__dict__
+    logger.info(f'Insert a new user with the next info -- {user_info}')
+    new_user = await db[REGISTERED_USERS_TABLE].insert_one(user_info)
+    await db[WALLET_TABLE].insert_one({'_id': new_user.inserted_id, 'username': user.email, 'credit_limit': 0})
     return new_user.inserted_id
 
 
@@ -66,6 +68,8 @@ async def registration(request: Request):
             form.__dict__.update(msg="Registration is Successful :)")
             new_user_id = await create_new_user(db, User(**form.__dict__))
             logger.info(f'new_user_id -- {new_user_id}')
+
+            # TODO: add user to wallet table in correct way via Wallet service
 
             # Send a new user info to Auth service
             request_url = AUTH_SERVICE_URL + '/insert_new_auth_user'

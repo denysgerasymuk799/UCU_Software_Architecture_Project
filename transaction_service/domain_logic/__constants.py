@@ -11,7 +11,9 @@ AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 FAUST_HOST = "127.0.0.1"
 FAUST_PORT = "8006"
 # ------------- Kafka-related Constants -------------
-KAFKA_BROKER = "127.0.0.1:9092"
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+SASL_USERNAME = os.getenv("SASL_USERNAME")
+SASL_PASSWORD = os.getenv("SASL_PASSWORD")
 CONSUMER_GROUP = "tr_group"
 # ------------------ Kafka Topics -------------------
 TRANSACTIONS_TOPIC = "TransactionService"

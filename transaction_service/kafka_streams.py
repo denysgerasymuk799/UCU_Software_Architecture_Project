@@ -17,7 +17,11 @@ app = faust.App('transaction-service',
                 broker=KAFKA_BROKER,
                 value_serializer='raw',
                 web_host=FAUST_HOST,
-                web_port=FAUST_PORT)
+                web_port=FAUST_PORT,
+                broker_credentials=faust.SASLCredentials(
+                    username=SASL_USERNAME,
+                    password=SASL_PASSWORD
+                ))
 transaction_topic_obj = app.topic(TRANSACTIONS_TOPIC)
 wallet_topic_obj = app.topic(WALLET_TOPIC)
 all_results_topic_obj = app.topic(ALL_RESULTS_TOPIC)

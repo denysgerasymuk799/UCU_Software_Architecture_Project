@@ -10,6 +10,7 @@ cortex.yaml
 transaction-service-data
 wallet-service-data
 .env
+confluent_credentials
 
 doc/build/*
 doc/_build/*

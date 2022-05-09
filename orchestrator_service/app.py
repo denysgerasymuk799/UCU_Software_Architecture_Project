@@ -80,7 +80,6 @@ async def validate_token(form, request):
     #     content_to_hash += check_data[key]
 
     # Check if user transaction is authorized
-    # if cryptographer.verify(bytes(str(content_to_hash), 'utf-8'), signature):
     if cryptographer.verify(bytes(str(check_data), 'utf-8'), signature):
         msg = "Transaction is verified!"
         is_valid_token = True
@@ -121,7 +120,7 @@ async def handle_transaction(request: Request):
             "amount": request_params['money_amount'],
         }
     }
-    await producer.send("TransactionService", message_)
+    producer.send("TransactionService", message_)
     logger.info(f'The next message is sent -- {message_}')
 
     return JSONResponse(content={'transaction_id': transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
