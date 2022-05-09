@@ -1,12 +1,10 @@
 import uuid
 import json
-import time
 import aiohttp
 import asyncio
-import logging
 from copy import copy
 
-from fastapi import FastAPI, HTTPException, status, Request
+from fastapi import FastAPI, status, Request
 from fastapi.responses import JSONResponse
 from Crypto.Util.number import long_to_bytes
 
@@ -49,6 +47,10 @@ async def post_request(client, url, headers, data):
 
 
 async def validate_token(form, request):
+    """
+    Send request to Auth service to validate JWT token.
+    After getting response, also verify if it was validated by Auth service using digital signature
+    """
     # Send request to authorize user transaction
     data = copy(form.__dict__['_dict'])
     data.pop('request', None)
@@ -73,11 +75,6 @@ async def validate_token(form, request):
     check_data['signature'] = None
 
     logger.debug(f'check_data -- {check_data}')
-    # # Collect content to hash and use it for verification of digital signature from auth service side.
-    # # The same set of fields is used on auth service side
-    # content_to_hash = ''
-    # for key in ['cardholder_id', 'receiver_id', 'money_amount']:
-    #     content_to_hash += check_data[key]
 
     # Check if user transaction is authorized
     if cryptographer.verify(bytes(str(check_data), 'utf-8'), signature):

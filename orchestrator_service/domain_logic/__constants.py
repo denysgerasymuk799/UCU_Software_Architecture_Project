@@ -11,8 +11,7 @@ MONGODB_URL = os.getenv("MONGODB_URL")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 KAFKA_CONFIG_FILE = os.getenv("KAFKA_CONFIG_FILE")
 # ------------- Kafka-related Constants -------------
-# KAFKA_BROKER = "127.0.0.1:9092"
-KAFKA_BROKER = "kafka:9092"
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 CONSUMER_GROUP = "tr_group"
 # ------------------ Kafka Topics -------------------
 TRANSACTIONS_TOPIC = "TransactionService"

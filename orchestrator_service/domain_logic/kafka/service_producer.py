@@ -28,10 +28,6 @@ class ServiceProducer:
         try:
             await self.__producer.send_and_wait(topic=topic, value=message)
             success_callback(self.__logger, topic)
-            # \
-            # .add_callback(success_callback, self.__logger) \
-            #     .add_errback(error_callback, self.__logger)
-            # self.__producer.flush()
 
         # if unable to fetch topic metadata, or unable to obtain memory buffer.
         except KafkaTimeoutError:
