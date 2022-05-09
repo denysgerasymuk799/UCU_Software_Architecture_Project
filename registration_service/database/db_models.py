@@ -52,3 +52,12 @@ class UserInDB(User):
     hashed_password: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+
+
+class AuthUser(BaseModel):
+    role: str
+    disabled: bool
+    username: Optional[str] = None
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    hashed_password: Optional[str] = None

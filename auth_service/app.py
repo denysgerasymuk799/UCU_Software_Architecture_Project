@@ -1,50 +1,21 @@
-import os
 import json
-import aiohttp
-import asyncio
-import logging
-from copy import copy
 from jose import JWTError, jwt
 from typing import Optional
-from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
 from fastapi import Depends, FastAPI, HTTPException, status, Request, Response, Cookie
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
-from dotenv import load_dotenv
-from Crypto.Util.number import bytes_to_long, long_to_bytes
+from Crypto.Util.number import bytes_to_long
 
 # Import app modules
+from config import logger, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, pwd_context, oauth2_scheme, cryptographer
 from database.db_models import db
-from database.db_models import TokenData, User, UserInDB
-from domain_logic.auth.forms import LoginForm
-from domain_logic.auth.forms import TransactionForm
-from domain_logic.utils.custom_logger import MyHandler
-from domain_logic.utils.cryptographer import Cryptographer
+from database.db_models import TokenData, User
+from domain_logic.auth.forms import LoginForm, NewAuthUserForm
+from database.db_interaction import create_new_user, get_user
 
-# Set up global constants
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")  # to get a string like this run: openssl rand -hex 32
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-
-# Password protection utils
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
-
-# Add logic for asynchronous requests
-loop = asyncio.get_event_loop()
-client = aiohttp.ClientSession(loop=loop)
-
-# Prepare own helper class objects
-cryptographer = Cryptographer(public_key_location=os.getenv('PUBLIC_KEY_LOCATION'),
-                              private_key_location=os.getenv('PRIVATE_KEY_LOCATION'))
-logger = logging.getLogger('root')
-logger.setLevel('INFO')
-logging.disable(logging.DEBUG)
-logger.addHandler(MyHandler())
 
 # Create app object
 app = FastAPI()
@@ -84,18 +55,6 @@ def verify_password(plain_password, hashed_password):
 
 def get_password_hash(password):
     return pwd_context.hash(password)
-
-
-async def get_user(email: str):
-    """
-    Find user in database
-    """
-    user_dict = await db["users"].find_one({"email": email})
-    if user_dict is not None:
-        logger.info(f'Found user in db: user email -- {user_dict["email"]}')
-        return UserInDB(**user_dict)
-
-    raise HTTPException(status_code=404, detail=f"User {email} not found")
 
 
 async def authenticate_user(email: str, password: str):
@@ -197,7 +156,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
-    if not user:
+    if not user or isinstance(user, HTTPException):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -205,17 +164,53 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+@app.post("/insert_new_auth_user")
+async def insert_new_auth_user(request: Request):
+    """
+    Required body parameters:
+    * username: str, equal to email
+    * hashed_password: str, user password
+    * firstname: str, user firstname
+    * lastname: str, user lastname
+    * role: str, user role
+    """
+    print('request.json() -- ', await request.json())
+    form = NewAuthUserForm(request)
+    logger.info(f'Request form -- {form}')
+    await form.load_data()
+    form.disabled = False
+    if await form.is_valid():
+        try:
+            new_user_id = await create_new_user(db, User(**form.__dict__))
+            logger.info(f'new_auth_user_id -- {new_user_id}')
+
+            return JSONResponse(status_code=status.HTTP_200_OK, headers=cors,
+                                content={"new_auth_user_id": str(new_user_id)})
+        except HTTPException as err:
+            form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
+
+    logger.info(f'Request errors: {form.__dict__.get("errors")}')
+    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, headers=cors,
+                        content={"errors": form.__dict__.get("errors")})
+
+
 @app.post("/login")
 async def login(request: Request):
+    """
+    Required body parameters:
+    * username: str, equal to email
+    * password: str, user password
+    * authorization method 'bearer' in headers
+    """
     logger.info(f'Request form -- {await request.form()}')
     form = LoginForm(request)
-    print('form_data.username -- ', form.username)
-    print('form_data.password -- ', form.password)
+    logger.debug(f'form_data.username -- {form.username}')
+    logger.debug(f'form_data.password -- {form.password}')
     await form.load_data()
     try:
         access_token_info = await login_for_access_token(form_data=form)
@@ -231,17 +226,22 @@ async def login(request: Request):
 
 @app.post("/authorize")
 async def authorize_transaction(request: Request, current_user: User = Depends(get_current_active_user)):
+    """
+    Required parameters:
+    * authorization method 'bearer' in headers
+    """
     if isinstance(current_user, Response):
         return current_user
 
     request_body = await request.json()
     logger.info(f'Request -- {request_body}')
-    logger.info(f'current_user.email -- {current_user.email}')
-    content_to_hash = ''
-    for key in ['cardholder_id', 'receiver_id', 'money_amount']:
-        content_to_hash += request_body[key]
-
-    request_body_bytes = bytes(str(content_to_hash), 'utf-8')
+    logger.info(f'current_user.username -- {current_user.username}')
+    # content_to_hash = ''
+    # for key in ['cardholder_id', 'receiver_id', 'money_amount']:
+    #     content_to_hash += request_body[key]
+    #
+    # request_body_bytes = bytes(str(content_to_hash), 'utf-8')
+    request_body_bytes = bytes(str(request_body), 'utf-8')
     request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
     request_body['validated'] = True
     response = json.dumps(request_body)

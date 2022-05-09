@@ -94,7 +94,7 @@ cortex delete auth-service
 cortex cluster info
 
 # Open dashboards
-http://<operator_url>/dashboard
+# http://<operator_url>/dashboard
 
 # Connect to Kubernetes with kubectl
 # https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/

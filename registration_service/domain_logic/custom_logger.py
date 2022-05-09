@@ -1,7 +1,7 @@
 import logging
 
 
-class MyHandler(logging.StreamHandler):
+class CustomHandler(logging.StreamHandler):
     def __init__(self):
         logging.StreamHandler.__init__(self)
         fmt = '\U00002705 [%(levelname)s] - [%(asctime)s] - (%(filename)s).%(funcName)s(%(lineno)d): %(message)s'

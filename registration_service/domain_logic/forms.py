@@ -5,6 +5,8 @@ from typing import Optional
 from fastapi import Request
 from passlib.context import CryptContext
 
+from domain_logic.constants import *
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -61,6 +63,8 @@ class RegistrationForm:
             self.errors.append("Valid city is required")
         if not self.address or not len(self.address) >= 4:
             self.errors.append("Valid address is required")
+        if self.role != SIMPLE_USER:
+            self.errors.append(f"During registration user role must be {SIMPLE_USER}")
         if not self.errors:
             self.hashed_password = pwd_context.hash(self.password)
             return True

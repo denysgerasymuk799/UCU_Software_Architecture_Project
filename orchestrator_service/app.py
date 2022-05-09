@@ -73,14 +73,15 @@ async def validate_token(form, request):
     check_data['signature'] = None
 
     logger.debug(f'check_data -- {check_data}')
-    # Collect content to hash and use it for verification of digital signature from auth service side.
-    # The same set of fields is used on auth service side
-    content_to_hash = ''
-    for key in ['cardholder_id', 'receiver_id', 'money_amount']:
-        content_to_hash += check_data[key]
+    # # Collect content to hash and use it for verification of digital signature from auth service side.
+    # # The same set of fields is used on auth service side
+    # content_to_hash = ''
+    # for key in ['cardholder_id', 'receiver_id', 'money_amount']:
+    #     content_to_hash += check_data[key]
 
     # Check if user transaction is authorized
-    if cryptographer.verify(bytes(str(content_to_hash), 'utf-8'), signature):
+    # if cryptographer.verify(bytes(str(content_to_hash), 'utf-8'), signature):
+    if cryptographer.verify(bytes(str(check_data), 'utf-8'), signature):
         msg = "Transaction is verified!"
         is_valid_token = True
     else:
@@ -106,6 +107,7 @@ async def handle_transaction(request: Request):
     transaction_id = str(uuid.uuid1())
     producer = ServiceProducer("ServiceProducer")
 
+    # TODO: add web validation on transaction form. Use database.forms.TransactionForm
     message_ = {
         "eventName": Events.TRANSACTION_REQUEST.value,
         "messageType": MESSAGE_TYPE_REQUEST,
