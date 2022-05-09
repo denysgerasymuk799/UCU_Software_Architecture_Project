@@ -6,4 +6,4 @@ docker push denys8herasymuk/web-banking-transaction-service:0.1
 
 kubectl create -f ./transaction_service.yaml
 
-kubectl get pods
+kubectl get pods -w
