@@ -1,0 +1,1 @@
+faust -A kafka_streams worker -l info

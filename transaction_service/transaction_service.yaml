@@ -1,0 +1,21 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-service
+spec:
+  selector:
+    matchLabels:
+      app: transaction-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: transaction-service
+    spec:
+      containers:
+      - name: transaction-service
+        image: denys8herasymuk/web-banking-transaction-service:0.1
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 8006

@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
-client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URL"))
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URL"),
+                                                serverSelectionTimeoutMS=60_000,
+                                                tls=True, tlsAllowInvalidCertificates=True)
 db = client.web_banking
 
 
@@ -38,17 +40,17 @@ class TokenData(BaseModel):
 
 
 class User(BaseModel):
-    email: str
+    username: str
+    role: str
+    disabled: bool
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     hashed_password: Optional[str] = None
-    birthday_date: Optional[str] = None
-    city: Optional[str] = None
-    address: Optional[str] = None
-    disabled: Optional[bool] = None
 
 
 class UserInDB(User):
+    role: str
     hashed_password: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    disabled: bool
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
