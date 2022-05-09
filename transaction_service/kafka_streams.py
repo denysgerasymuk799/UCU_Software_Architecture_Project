@@ -1,3 +1,4 @@
+import ssl
 import json
 import faust
 import logging
@@ -13,15 +14,22 @@ logger.setLevel('INFO')
 logging.disable(logging.DEBUG)
 logger.addHandler(CustomHandler())
 
+# ssl_context = ssl.create_default_context(
+#     purpose=ssl.Purpose.SERVER_AUTH, cafile='/home/denys_herasymuk/Downloads/aws/dist/awscli/botocore/cacert.pem')
+#
+# app = faust.App('transaction-service',
+#                 broker=KAFKA_BROKER,
+#                 value_serializer='raw',
+#                 web_host=FAUST_HOST,
+#                 web_port=FAUST_PORT,
+#                 broker_credentials=ssl_context)
+
 app = faust.App('transaction-service',
                 broker=KAFKA_BROKER,
                 value_serializer='raw',
                 web_host=FAUST_HOST,
-                web_port=FAUST_PORT,
-                broker_credentials=faust.SASLCredentials(
-                    username=SASL_USERNAME,
-                    password=SASL_PASSWORD
-                ))
+                web_port=FAUST_PORT)
+
 transaction_topic_obj = app.topic(TRANSACTIONS_TOPIC)
 wallet_topic_obj = app.topic(WALLET_TOPIC)
 all_results_topic_obj = app.topic(ALL_RESULTS_TOPIC)

@@ -120,7 +120,7 @@ async def handle_transaction(request: Request):
             "amount": request_params['money_amount'],
         }
     }
-    producer.send("TransactionService", message_)
+    await producer.send("TransactionService", message_)
     logger.info(f'The next message is sent -- {message_}')
 
     return JSONResponse(content={'transaction_id': transaction_id}, status_code=status.HTTP_200_OK, headers=cors)

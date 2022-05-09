@@ -11,11 +11,7 @@ pydantic~=1.9.0
 passlib[bcrypt]~=1.7.4
 dnspython
 python-multipart
-kafka
 python-jose[cryptography]
 PyCryptodome
 aiokafka==0.7.2
 boto3==1.22.9
-requests
-certifi
-confluent-kafka[avro,json,protobuf]>=1.4.2

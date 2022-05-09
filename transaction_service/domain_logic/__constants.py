@@ -8,10 +8,12 @@ load_dotenv()
 MONGODB_URL = os.getenv("MONGODB_URL")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 # ------------- Faust-related Constants -------------
-FAUST_HOST = "127.0.0.1"
+# FAUST_HOST = "127.0.0.1"
+FAUST_HOST = "0.0.0.0"
 FAUST_PORT = "8006"
 # ------------- Kafka-related Constants -------------
-KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+# KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+KAFKA_BROKER = 'kafka://kafka:9092'
 SASL_USERNAME = os.getenv("SASL_USERNAME")
 SASL_PASSWORD = os.getenv("SASL_PASSWORD")
 CONSUMER_GROUP = "tr_group"

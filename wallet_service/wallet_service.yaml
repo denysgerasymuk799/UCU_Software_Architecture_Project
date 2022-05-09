@@ -1,0 +1,21 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-service
+spec:
+  selector:
+    matchLabels:
+      app: wallet-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: wallet-service
+    spec:
+      containers:
+      - name: wallet-service
+        image: denys8herasymuk/web-banking-wallet-service:0.1
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 8006

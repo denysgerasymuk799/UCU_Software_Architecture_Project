@@ -11,4 +11,4 @@ RUN pip install -r ./requirements.txt
 
 COPY ./ /opt/app/
 
-CMD uvicorn --host 0.0.0.0 --port 8080 --workers 4 app:app
+CMD python -m faust -A kafka_streams worker -l info

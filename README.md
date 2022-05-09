@@ -84,6 +84,13 @@ docker push 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_auth_ser
 cortex deploy
 
 cortex delete auth-service
+
+# Deploy services interacted with kafka
+docker build . -t transaction_service:0.1
+
+docker tag transaction_service:0.1 denys8herasymuk/web-banking-transaction-service:0.1
+
+docker push denys8herasymuk/web-banking-transaction-service:0.1
 ```
 
 
