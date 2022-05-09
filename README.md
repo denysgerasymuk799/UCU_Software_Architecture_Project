@@ -112,3 +112,18 @@ aws eks --region eu-central-1 update-kubeconfig --name web-banking
 # ECR login
 aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 218145147595.dkr.ecr.eu-central-1.amazonaws.com
 ```
+
+
+### Configure Confluent for Kubernetes
+
+```shell
+helm repo add confluentinc https://packages.confluent.io/helm
+helm repo update
+helm upgrade --install confluent-operator confluentinc/confluent-for-kubernetes
+kubectl apply -f ./confluent-platform.yaml
+
+# View Constrol Center
+kubectl port-forward controlcenter-0 9021:9021
+
+# And go to http://localhost:9021
+```
