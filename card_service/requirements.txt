@@ -1,0 +1,12 @@
+jinja2
+pymongo~=3.12.3
+motor~=2.5.1
+requests~=2.27.1
+aiohttp~=3.8.1
+asyncio~=3.4.3
+python-dotenv~=0.20.0
+pydantic~=1.9.0
+dnspython
+cassandra-driver
+python-multipart
+faust==1.10.4
