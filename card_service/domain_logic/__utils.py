@@ -1,4 +1,4 @@
-from domain_logic.utils.__logger import ServiceLogger
+from domain_logic.__logger import ServiceLogger
 from domain_logic.__constants import *
 import logging
 import datetime
