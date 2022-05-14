@@ -10,8 +10,11 @@ cortex.yaml
 *_venv
 transaction-service-data
 wallet-service-data
+card-service-data
 .env
 confluent_credentials.config
+*.crt
+20K.txt
 
 doc/build/*
 doc/_build/*

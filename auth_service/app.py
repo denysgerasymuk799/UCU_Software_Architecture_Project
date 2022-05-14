@@ -59,6 +59,7 @@ def get_password_hash(password):
 
 async def authenticate_user(email: str, password: str):
     user = await get_user(email)
+    print('user -- ', user)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -101,20 +102,20 @@ async def authorize_user(access_token):
             logger.error('email is None')
             # raise credentials_exception
             logger.error(msg)
-            return Response(msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
+            return JSONResponse(content=msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
         token_data = TokenData(email=email)
     except JWTError as err:
         msg = f'JWTError: {err}\n' + f'HTTPException: {credentials_exception.detail}'
         # TODO: add Not authorized to login page and return it in this case
         logger.error(f'JWTError: {err}')
         logger.error(f'HTTPException: {credentials_exception.detail}')
-        return Response(msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
+        return JSONResponse(content=msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
     user = await get_user(email=token_data.email)
     if user is None:
         msg = f'HTTPException: {credentials_exception.detail}'
         logger.error('user is None')
         logger.error(msg)
-        return Response(msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
+        return JSONResponse(content=msg, headers=cors, status_code=status.HTTP_401_UNAUTHORIZED)
     return user
 
 
@@ -145,7 +146,7 @@ async def authorize_user_action(access_token: Optional[str] = Cookie(None)):
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
     # Return Response on Login page in case failed authorization
-    if isinstance(current_user, Response):
+    if isinstance(current_user, JSONResponse):
         return current_user
     if current_user.disabled:
         logger.error('HTTPException: Inactive user')
@@ -162,11 +163,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id}
 
 
 @app.post("/insert_new_auth_user")
@@ -230,17 +232,13 @@ async def authorize_transaction(request: Request, current_user: User = Depends(g
     Required parameters:
     * authorization method 'bearer' in headers
     """
-    if isinstance(current_user, Response):
+    if isinstance(current_user, JSONResponse):
         return current_user
 
     request_body = await request.json()
     logger.info(f'Request -- {request_body}')
     logger.info(f'current_user.username -- {current_user.username}')
-    # content_to_hash = ''
-    # for key in ['cardholder_id', 'receiver_id', 'money_amount']:
-    #     content_to_hash += request_body[key]
-    #
-    # request_body_bytes = bytes(str(content_to_hash), 'utf-8')
+
     request_body_bytes = bytes(str(request_body), 'utf-8')
     request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
     request_body['validated'] = True

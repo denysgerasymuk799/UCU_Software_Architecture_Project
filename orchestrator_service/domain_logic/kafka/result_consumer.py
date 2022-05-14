@@ -24,10 +24,10 @@ async def consume_results():
             print(f'Consumer record: {record}')
             msg = json.loads(record.value)
             print(f'Consumer msg: {msg}')
-            user_transaction_id = msg['user_transaction_id']
+            transaction_id = msg['transaction_id']
 
             # Add transaction id into json file name
-            s3object = s3_client.Object(RESULTS_BUCKET_NAME, f'{user_transaction_id}.json')
+            s3object = s3_client.Object(RESULTS_BUCKET_NAME, f'{transaction_id}.json')
 
             s3object.put(
                 Body=(bytes(json.dumps(msg).encode('UTF-8')))

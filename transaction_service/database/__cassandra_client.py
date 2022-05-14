@@ -1,11 +1,12 @@
 # Download Amazon TLS certificate to certificates folder:
 # curl https://certs.secureserver.net/repository/sf-class2-root.crt -O
-from domain_logic.__constants import CERTIFICATE_PATH
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.query import SimpleStatement
 from cassandra import ConsistencyLevel
 from ssl import SSLContext, PROTOCOL_TLSv1_2, CERT_REQUIRED
+
+from domain_logic.__constants import CERTIFICATE_PATH
 
 
 class CassandraClient:

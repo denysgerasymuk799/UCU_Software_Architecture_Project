@@ -14,7 +14,7 @@ logging.disable(logging.DEBUG)
 logger.addHandler(CustomHandler())
 
 # Initialize Faust app along with Kafka topic objects.
-app = faust.App('transaction-service',
+app = faust.App('card-service',
                 broker=KAFKA_BROKER,
                 value_serializer='raw',
                 web_host=FAUST_HOST,
@@ -22,7 +22,7 @@ app = faust.App('transaction-service',
 transaction_service_topic = app.topic(TRANSACTIONS_TOPIC)
 card_service_topic = app.topic(CARD_TOPIC)
 
-# Initialize card service instanse.
+# Initialize card service instance.
 card_service = CardService()
 
 

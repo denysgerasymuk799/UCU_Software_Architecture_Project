@@ -19,6 +19,7 @@ from domain_logic.kafka.result_consumer import consume_results
 # Create app object
 app = FastAPI()
 
+
 asyncio.create_task(consume_results())
 
 # Add logic for asynchronous requests
@@ -68,6 +69,12 @@ async def validate_token(form, request):
     authorizer_response = authorizer_response.decode("utf-8")
     authorizer_response = json.loads(authorizer_response)
     logger.debug(f'authorizer_response --  {authorizer_response}')
+    if not isinstance(authorizer_response, dict):
+        return False, authorizer_response
+
+    if 'signature' not in authorizer_response.keys():
+        return False, authorizer_response
+
     signature = long_to_bytes(authorizer_response['signature'])
 
     check_data = copy(data)
@@ -97,7 +104,7 @@ async def handle_transaction(request: Request):
     form = await request.form()
     is_valid_token, msg = await validate_token(form, request)
     if not is_valid_token:
-        JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+        return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
     request_params = form.__dict__['_dict']
     transaction_id = str(uuid.uuid1())
