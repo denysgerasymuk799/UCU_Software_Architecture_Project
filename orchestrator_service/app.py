@@ -111,10 +111,10 @@ async def handle_transaction(request: Request):
         "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
         "message": "",
         "data": {
-            "user_transaction_id": transaction_id,
-            "cardholder_id": request_params['cardholder_id'],
-            "receiver_id": request_params['receiver_id'],
-            "amount": request_params['money_amount'],
+            "transaction_id": transaction_id,
+            "card_id": request_params['card_id'],
+            "receiver_card_id": request_params['receiver_card_id'],
+            "amount": request_params['amount'],
         }
     }
     await producer.send("TransactionService", message_)

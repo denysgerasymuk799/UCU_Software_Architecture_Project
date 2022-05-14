@@ -1,22 +1,37 @@
-import os
 from enum import Enum
 from dotenv import load_dotenv
+import os
 
 
 load_dotenv()
-# ------------- Service Links --------------
-MONGODB_URL = os.getenv("MONGODB_URL")
+# ----------------- Service Links -------------------
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
+
 # ------------- Faust-related Constants -------------
 FAUST_HOST = os.getenv("FAUST_HOST")
-FAUST_PORT = "8006"
+FAUST_PORT = "8007"
+
 # ------------- Kafka-related Constants -------------
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
-CONSUMER_GROUP = "tr_group"
-# ------------------ Kafka Topics -------------------
 TRANSACTIONS_TOPIC = "TransactionService"
-WALLET_TOPIC = "WalletService"
+CARD_TOPIC = "CardService"
 ALL_RESULTS_TOPIC = "AllResultsTopic"
+
+# ------------------- Cassandra ---------------------
+CASSANDRA_HOST = os.getenv("CASSANDRA_HOST")
+CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT"))
+CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE")
+AMAZOM_KEYSPACES_USERNAME = os.getenv("AMAZOM_KEYSPACES_USERNAME")
+AMAZOM_KEYSPACES_PASSWORD = os.getenv("AMAZOM_KEYSPACES_PASSWORD")
+CERTIFICATE_PATH = "certificates/sf-class2-root.crt"
+
+# ------------- Cassandra Table Names ---------------
+TRANSACTIONS_TABLE = "transactions"
+RESERVED_TR_TABLE = "reserved_transactions"
+CARDS_TABLE = "cards"
+TR_PREAGGREGATED_DAILY_TABLE = "transactions_preaggregated_daily"
+TR_PREAGGREGATED_MONTHLY_TABLE = "transactions_preaggregated_monthly"
+
 # ------------- Message Body Variables --------------
 RESPONSE_SUCCESS = 200
 MESSAGE_TYPE_RESPONSE = "Response"
@@ -25,17 +40,11 @@ TRANSACTION_NEW_STATUS = "NEW"
 TRANSACTION_PENDING_STATUS = "PENDING"
 TRANSACTION_COMPLETED_STATUS = "COMPLETED"
 TRANSACTION_FAILED_STATUS = "FAILED"
+
 # ---------------- Logger Constants -----------------
 LOGS_PATH = "../logs/"
-WALLET_SERVICE_PRODUCER_NAME = "WalletServiceProducer"
+CARD_SERVICE_PRODUCER_NAME = "CardServiceProducer"
 TRANSACTION_SERVICE_PRODUCER_NAME = "TransactionServiceProducer"
-# ----------------- DB Table Names ------------------
-TRANSACTION_TABLE = "transactions"
-RESERVED_TABLE = "reserved"
-WALLET_TABLE = "wallet"
-# ------- MongoDB Instance Handler Variables --------
-NUM_RETRIES = 5
-MAX_RETURN_LENGTH = 100
 
 
 class Events(Enum):

@@ -2,8 +2,8 @@ import json
 import faust
 import logging
 
-from domain_logic.utils.custom_logger import CustomHandler
-from domain_logic.wallet_service import WalletService
+from domain_logic.__logger import CustomHandler
+from domain_logic.card_service import CardService
 from domain_logic.__constants import *
 
 
@@ -13,32 +13,37 @@ logger.setLevel('INFO')
 logging.disable(logging.DEBUG)
 logger.addHandler(CustomHandler())
 
+# Initialize Faust app along with Kafka topic objects.
 app = faust.App('transaction-service',
                 broker=KAFKA_BROKER,
                 value_serializer='raw',
                 web_host=FAUST_HOST,
                 web_port=FAUST_PORT)
-transaction_topic_obj = app.topic(TRANSACTIONS_TOPIC)
-wallet_topic_obj = app.topic(WALLET_TOPIC)
-wallet_service = WalletService()
+transaction_service_topic = app.topic(TRANSACTIONS_TOPIC)
+card_service_topic = app.topic(CARD_TOPIC)
+
+# Initialize card service instanse.
+card_service = CardService()
 
 
-@app.agent(wallet_topic_obj)
+@app.agent(card_service_topic)
 async def process_transactions(records):
+    """
+    Read messages from CARD topic, process them and send response to TRANSACTION topic.
+
+    :param records: kafka topic messages.
+    """
     async for record in records:
         # Get message details.
         message = json.loads(record)
-        print('message -- ', message)
         event, source, data = message['eventName'], message['producer'], message['data']
         # Log received message.
         logger.info(f"Message received. Event: [{event}]. Source: [{source}].")
 
         # Do the required stuff.
         if event == Events.TRANSACTION_CREATED.value:
-            await wallet_service.reserve_balance(data, transaction_topic_obj)
+            await card_service.reserve_balance(data, transaction_service_topic)
         elif event == Events.TRANSACTION_PENDING.value:
-            await wallet_service.process_payment(data, transaction_topic_obj)
+            await card_service.process_payment(data, transaction_service_topic)
         elif event == Events.RESERVATION_CANCEL.value:
-            await wallet_service.cancel_reservation(data, transaction_topic_obj)
-
-    # TODO: consumer.commit???
+            await card_service.cancel_reservation(data, transaction_service_topic)

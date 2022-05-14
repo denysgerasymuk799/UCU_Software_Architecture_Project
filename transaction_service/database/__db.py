@@ -1,51 +1,79 @@
 from domain_logic.__constants import *
+from datetime import datetime
 from pydantic import BaseModel
-from bson import ObjectId
-import motor.motor_asyncio
-import datetime
-import time
-
-
-client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
-db = client.web_banking
 
 
 class Transaction(BaseModel):
-    cardholder_id: str
-    receiver_id: str
+    transaction_id: str
+    card_id: str
+    receiver_card_id: str
     amount: int
     status: str
-    user_transaction_id: str
+    date: str
 
 
-class Wallet(BaseModel):
+class Card(BaseModel):
+    card_id: str
     credit_limit: int
 
 
 class ReservedTransaction(BaseModel):
-    wallet_id: str
+    transaction_id: str
+    card_id: str
+    receiver_card_id: str
     amount: int
-    timestamp: datetime.datetime
+    date: str
 
 
-class TransactionServiceDatabase:
-    """
-    MongoDB instance available for the TransactionService.
-    """
-    def __init__(self, database):
-        self.__db = database
+class TransactionServiceOperator:
+    def __init__(self, client) -> None:
+        self.__client = client
 
-    async def get_transaction_record(self, transaction_id: str):
-        record = await self.__db[TRANSACTION_TABLE].find_one({"_id": ObjectId(transaction_id)})
-        return record
+    def get_transaction_record(self, transaction_id: str):
+        query = f"""
+        SELECT transaction_id, card_id, receiver_card_id, amount, status, date 
+        FROM {TRANSACTIONS_TABLE} 
+        WHERE transaction_id = '{transaction_id}';
+        """
 
-    async def create_transaction_record(self, transaction: Transaction):
-        record = await self.__db[TRANSACTION_TABLE].insert_one(transaction.__dict__)
-        return record.inserted_id
+        records = list(self.__client.execute_read_query(query))
+        if not records:
+            return None
+        return records[0]
 
-    async def update_transaction_record(self, transaction_id: str, data):
-        record_filter = {"_id": ObjectId(transaction_id)}
-        newvalues = {"$set": data}
+    def create_transaction_record(self, trans: Transaction):
+        # Check whether such receiver exists.
+        query = f"""SELECT * FROM {CARDS_TABLE} WHERE card_id = '{trans.receiver_card_id}';"""
+        records = list(self.__client.execute_read_query(query))
+        if not records:
+            return
 
-        await self.__db[TRANSACTION_TABLE].update_one(record_filter, newvalues)
-        return transaction_id
+        # Insert transaction record into table.
+        date = datetime.utcnow().strftime("%Y-%m-%d")
+        query = f"""
+        INSERT INTO {TRANSACTIONS_TABLE} (transaction_id, card_id, receiver_card_id, amount, status, date)
+        VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', '{date}');
+        """
+        self.__client.execute_write_query(query)
+
+    def update_transaction_status(self, transaction_id: str, status: str):
+        # Get transaction record.
+        query = f"""
+        SELECT card_id, date 
+        FROM {TRANSACTIONS_TABLE} 
+        WHERE transaction_id = '{transaction_id}';
+        """
+        records = list(self.__client.execute_read_query(query))
+        if not records:
+            return None
+
+        # Get clustering columns values.
+        card_id, date = records[0][0], records[0][1]
+
+        # Update transaction record.
+        query = f"""
+        UPDATE {TRANSACTIONS_TABLE}
+        SET status = '{status}'
+        WHERE transaction_id = '{transaction_id}' AND card_id = '{card_id}' AND date = '{date}';
+        """
+        self.__client.execute_write_query(query)
