@@ -19,7 +19,10 @@ CARD_TOPIC = "CardService"
 # ------------------- Cassandra ---------------------
 CASSANDRA_HOST = os.getenv("CASSANDRA_HOST")
 CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT"))
-CASSANDRA_KEYSPACE = "bank"
+CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE")
+AMAZOM_KEYSPACES_USERNAME = os.getenv("AMAZOM_KEYSPACES_USERNAME")
+AMAZOM_KEYSPACES_PASSWORD = os.getenv("AMAZOM_KEYSPACES_PASSWORD")
+CERTIFICATE_PATH = "certificates/sf-class2-root.crt"
 
 # ------------- Cassandra Table Names ---------------
 TRANSACTIONS_TABLE = "transactions"

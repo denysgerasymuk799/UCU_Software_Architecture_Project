@@ -36,7 +36,7 @@ class TransactionServiceOperator:
         WHERE transaction_id = '{transaction_id}';
         """
 
-        records = list(self.__client.execute(query))
+        records = list(self.__client.execute_read_query(query))
         if not records:
             return None
         return records[0]
@@ -44,7 +44,7 @@ class TransactionServiceOperator:
     def create_transaction_record(self, trans: Transaction):
         # Check whether such receiver exists.
         query = f"""SELECT * FROM {CARDS_TABLE} WHERE card_id = '{trans.receiver_card_id}';"""
-        records = list(self.__client.execute(query))
+        records = list(self.__client.execute_read_query(query))
         if not records:
             return
 
@@ -54,7 +54,7 @@ class TransactionServiceOperator:
         INSERT INTO {TRANSACTIONS_TABLE} (transaction_id, card_id, receiver_card_id, amount, status, date)
         VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', '{date}');
         """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)
 
     def update_transaction_status(self, transaction_id: str, status: str):
         # Get transaction record.
@@ -63,7 +63,7 @@ class TransactionServiceOperator:
         FROM {TRANSACTIONS_TABLE} 
         WHERE transaction_id = '{transaction_id}';
         """
-        records = list(self.__client.execute(query))
+        records = list(self.__client.execute_read_query(query))
         if not records:
             return None
 
@@ -76,4 +76,4 @@ class TransactionServiceOperator:
         SET status = '{status}'
         WHERE transaction_id = '{transaction_id}' AND card_id = '{card_id}' AND date = '{date}';
         """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)

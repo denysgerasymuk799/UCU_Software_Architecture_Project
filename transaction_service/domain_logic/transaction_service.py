@@ -8,7 +8,13 @@ import json
 import uuid
 
 
-client = CassandraClient(host=CASSANDRA_HOST, port=CASSANDRA_PORT, keyspace=CASSANDRA_KEYSPACE)
+client = CassandraClient(
+    host=CASSANDRA_HOST,
+    port=CASSANDRA_PORT,
+    keyspace=CASSANDRA_KEYSPACE,
+    username=AMAZOM_KEYSPACES_USERNAME,
+    password=AMAZOM_KEYSPACES_PASSWORD
+)
 client.connect()
 
 

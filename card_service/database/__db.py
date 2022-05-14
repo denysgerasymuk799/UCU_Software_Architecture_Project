@@ -34,24 +34,18 @@ class CardServiceOperator:
         INSERT INTO {CARDS_TABLE} (card_id, credit_limit)
         VALUES ('{card_id}', 0);
         """
-        return self.__client.execute(query)
+        return self.__client.execute_write_query(query)
 
     def get_available_card_balance(self, card_id: str):
         # Get an amount of all reserved transactions.
-        query = f"""SELECT SUM(amount) FROM {RESERVED_TR_TABLE} WHERE card_id = '{card_id}';"""
-        reserved_amount = list(self.__client.execute(query))[0][0]
+        query = f"""SELECT amount FROM {RESERVED_TR_TABLE} WHERE card_id = '{card_id}';"""
+        reserved_amount = sum(row[0] for row in list(self.__client.execute_read_query(query)))
 
         # Get an available card credit limit.
         query = f"""SELECT credit_limit FROM {CARDS_TABLE} WHERE card_id = '{card_id}';"""
-        credit_limit = list(self.__client.execute(query))[0][0]
+        credit_limit = list(self.__client.execute_read_query(query))[0][0]
         # Available limit = Current credit limit - SUM(reserved transactions).
         return credit_limit - reserved_amount
-
-    def record_exists(self, query):
-        records = list(self.__client.execute(query))
-        if not records:
-            return None
-        return records[0][0]
 
     def reserve_transaction_amount(self, trans: ReservedTransaction):
         # Check if there is enough balance.
@@ -64,13 +58,16 @@ class CardServiceOperator:
         INSERT INTO {RESERVED_TR_TABLE} (transaction_id, card_id, receiver_card_id, amount, date)
         VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.date}');
         """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)
 
         query = f"""
         SELECT transaction_id FROM {RESERVED_TR_TABLE} 
         WHERE card_id = '{trans.card_id}' AND transaction_id = '{trans.transaction_id}';
         """
-        return self.record_exists(query)
+        records = list(self.__client.execute_read_query(query))
+        if not records:
+            return None
+        return records[0][0]
 
     def execute_transaction(self, card_id: str, transaction_id: str):
         # Get the transaction that needs to be executed.
@@ -80,7 +77,7 @@ class CardServiceOperator:
         WHERE card_id = '{card_id}' AND transaction_id = '{transaction_id}';
         """
 
-        transactions = list(self.__client.execute(query))
+        transactions = list(self.__client.execute_read_query(query))
         if not transactions:
             return None
         else:
@@ -97,14 +94,14 @@ class CardServiceOperator:
         # Get cardholder current credit limit to carry operation on.
         query = f"""SELECT credit_limit FROM {CARDS_TABLE} WHERE card_id = '{transaction.card_id}';"""
         try:
-            cardholder_credit_limit = list(self.__client.execute(query))[0][0]
+            cardholder_credit_limit = list(self.__client.execute_read_query(query))[0][0]
         except IndexError:
             return None
 
         # Get receiver current credit limit.
         query = f"""SELECT credit_limit FROM {CARDS_TABLE} WHERE card_id = '{transaction.receiver_card_id}';"""
         try:
-            receiver_credit_limit = list(self.__client.execute(query))[0][0]
+            receiver_credit_limit = list(self.__client.execute_read_query(query))[0][0]
         except IndexError:
             return None
 
@@ -115,14 +112,14 @@ class CardServiceOperator:
         SET credit_limit = {cardholder_credit_limit - transaction.amount}
         WHERE card_id = '{transaction.card_id}';
         """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)
 
         query = f"""
         UPDATE {CARDS_TABLE}
         SET credit_limit = {receiver_credit_limit + transaction.amount}
         WHERE card_id = '{transaction.receiver_card_id}';
         """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)
 
         # Send transaction to preaggregation.
         transaction_datetime = datetime.strptime(transaction.date, "%Y-%m-%d")
@@ -141,7 +138,7 @@ class CardServiceOperator:
         SELECT card_id, total_amount FROM {table} 
         WHERE card_id = '{transaction.card_id}' AND date = '{date}';
         """
-        records = list(self.__client.execute(query))
+        records = list(self.__client.execute_read_query(query))
 
         if not records:
             # If this is the first transaction over a day, insert the record.
@@ -157,11 +154,11 @@ class CardServiceOperator:
             SET total_amount = {total_amount + transaction.amount}
             WHERE card_id = '{transaction.card_id}' AND date = '{date}';
             """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)
 
     def cancel_reservation(self, card_id: str, transaction_id: str):
         query = f"""
         DELETE FROM {RESERVED_TR_TABLE} 
         WHERE card_id = '{card_id}' AND transaction_id = '{transaction_id}';
         """
-        self.__client.execute(query)
+        self.__client.execute_write_query(query)
