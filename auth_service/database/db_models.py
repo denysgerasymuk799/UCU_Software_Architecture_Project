@@ -49,6 +49,7 @@ class User(BaseModel):
 
 
 class UserInDB(User):
+    user_id: str
     role: str
     hashed_password: str
     disabled: bool

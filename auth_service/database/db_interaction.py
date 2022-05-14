@@ -19,6 +19,7 @@ async def get_user(email: str):
     user_dict = await db[AUTH_USERS_TABLE].find_one({"username": email})
     if user_dict is not None:
         logger.info(f'Found user in db: user email -- {user_dict["username"]}')
+        user_dict['user_id'] = str(user_dict['_id'])
         return UserInDB(**user_dict)
 
     raise HTTPException(status_code=404, detail=f"User {email} not found")
