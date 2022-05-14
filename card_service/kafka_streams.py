@@ -41,7 +41,9 @@ async def process_transactions(records):
         logger.info(f"Message received. Event: [{event}]. Source: [{source}].")
 
         # Do the required stuff.
-        if event == Events.TRANSACTION_CREATED.value:
+        if event == Events.TRANSACTION_TOPUP.value:
+            await card_service.topup_balance(data, transaction_service_topic)
+        elif event == Events.TRANSACTION_CREATED.value:
             await card_service.reserve_balance(data, transaction_service_topic)
         elif event == Events.TRANSACTION_PENDING.value:
             await card_service.process_payment(data, transaction_service_topic)

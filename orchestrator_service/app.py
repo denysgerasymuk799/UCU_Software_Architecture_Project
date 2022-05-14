@@ -104,8 +104,13 @@ async def handle_transaction(request: Request):
     producer = ServiceProducer("ServiceProducer")
 
     # TODO: add web validation on transaction form. Use database.forms.TransactionForm
+    if request_params["transaction_type"] == TOP_UP_ACTIVITY:
+        event_name = Events.TRANSACTION_TOPUP.value
+    else:
+        event_name = Events.TRANSACTION_REQUEST.value
+
     message_ = {
-        "eventName": Events.TRANSACTION_REQUEST.value,
+        "eventName": event_name,
         "messageType": MESSAGE_TYPE_REQUEST,
         "responseType": RESPONSE_SUCCESS,
         "producer": TRANSACTION_SERVICE_PRODUCER_NAME,

@@ -42,11 +42,13 @@ class TransactionServiceOperator:
         return records[0]
 
     def create_transaction_record(self, trans: Transaction):
-        # Check whether such receiver exists.
-        query = f"""SELECT * FROM {CARDS_TABLE} WHERE card_id = '{trans.receiver_card_id}';"""
-        records = list(self.__client.execute_read_query(query))
-        if not records:
-            return
+        # If activity is not a balance top up.
+        if trans.receiver_card_id != TOP_UP_ACTIVITY:
+            # Check whether such receiver exists.
+            query = f"""SELECT * FROM {CARDS_TABLE} WHERE card_id = '{trans.receiver_card_id}';"""
+            records = list(self.__client.execute_read_query(query))
+            if not records:
+                return
 
         # Insert transaction record into table.
         date = datetime.utcnow().strftime("%Y-%m-%d")

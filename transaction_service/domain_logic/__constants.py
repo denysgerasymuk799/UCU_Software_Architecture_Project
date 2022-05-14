@@ -46,11 +46,14 @@ LOGS_PATH = "../logs/"
 CARD_SERVICE_PRODUCER_NAME = "CardServiceProducer"
 TRANSACTION_SERVICE_PRODUCER_NAME = "TransactionServiceProducer"
 
+TOP_UP_ACTIVITY = "BALANCE-TOP-UP"
+
 
 class Events(Enum):
     """
     Denotes events used inside Kafka topics for message distinction.
     """
+    TRANSACTION_TOPUP = "EventTransactionTopUp"
     TRANSACTION_REQUEST = "EventTransactionRequest"
     TRANSACTION_CREATED = "EventTransactionCreated"
     RESERVATION_SUCCESS = "EventReservationSuccess"

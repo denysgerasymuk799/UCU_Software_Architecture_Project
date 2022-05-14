@@ -39,10 +39,15 @@ NUM_RETRIES = 5
 MAX_RETURN_LENGTH = 100
 
 
+TOP_UP_ACTIVITY = "BALANCE_TOP_UP"
+TRANSACTION_ACTIVITY = "TRANSACTION"
+
+
 class Events(Enum):
     """
     Denotes events used inside Kafka topics for message distinction.
     """
+    TRANSACTION_TOPUP = "EventTransactionTopUp"
     TRANSACTION_REQUEST = "EventTransactionRequest"
     TRANSACTION_CREATED = "EventTransactionCreated"
     RESERVATION_SUCCESS = "EventReservationSuccess"

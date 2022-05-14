@@ -25,7 +25,40 @@ class CardService:
         self.__logger = get_logger(name=CARD_TOPIC)
         self.__db = CardServiceOperator(client)
 
-    async def reserve_balance(self, data, transaction_service_topic):
+    async def topup_balance(self, data: dict, transaction_service_topic):
+        """
+        Top up card balance for specified cardId.
+
+        :param data: (dict) - transaction parameters.
+        :param transaction_service_topic: (faust.topic) - topic to respond to after operation completion.
+        """
+        # Top up the balance from the db side.
+        response = self.__db.topup_balance(data["card_id"], data["amount"])
+
+        # Check if balance was updated.
+        if not response:
+            event_name = Events.TRANSACTION_FAILURE.value
+            message = "Couldn't top up card balance."
+        else:
+            event_name = Events.TRANSACTION_SUCCESS.value
+            message = "Card balance updated."
+
+        # Send a response to a TransactionService.
+        message = {
+            "eventName":    event_name,
+            "messageType":  MESSAGE_TYPE_RESPONSE,
+            "responseType": RESPONSE_SUCCESS,
+            "producer":     CARD_SERVICE_PRODUCER_NAME,
+            "message":      message,
+            "data": {
+                "transaction_id": data["transaction_id"],
+                "card_id": data["card_id"]
+            }
+        }
+        await transaction_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        self.__logger.info(f"Transaction: [{data['transaction_id']}]. Status: COMPLETE.")
+
+    async def reserve_balance(self, data: dict, transaction_service_topic):
         """
         Reserve card balance for the newly created transaction.
 

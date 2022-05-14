@@ -36,6 +36,22 @@ class CardServiceOperator:
         """
         return self.__client.execute_write_query(query)
 
+    def topup_balance(self, card_id: str, amount: int):
+        # Get cardholder current credit limit to carry operation on.
+        query = f"""SELECT credit_limit FROM {CARDS_TABLE} WHERE card_id = '{card_id}';"""
+        try:
+            cardholder_credit_limit = list(self.__client.execute_read_query(query))[0][0]
+        except IndexError:
+            return None
+
+        query = f"""
+        UPDATE {CARDS_TABLE}
+        SET credit_limit = {cardholder_credit_limit + amount}
+        WHERE card_id = '{card_id}';
+        """
+        self.__client.execute_write_query(query)
+        return True
+
     def get_available_card_balance(self, card_id: str):
         # Get an amount of all reserved transactions.
         query = f"""SELECT amount FROM {RESERVED_TR_TABLE} WHERE card_id = '{card_id}';"""

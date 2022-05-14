@@ -27,7 +27,44 @@ class TransactionService:
         self.__logger = get_logger(name=TRANSACTIONS_TOPIC)
         self.__db = TransactionServiceOperator(client)
 
-    async def create_transaction(self, data, card_service_topic):
+    async def create_topup_transaction(self, data: dict, card_service_topic):
+        """
+        Create balance top up transaction record in the database.
+        Notify card service to top up balance for the current transaction.
+
+        :param data: (dict) - transaction parameters.
+        :param card_service_topic: (faust.topic)
+        """
+        record = Transaction(
+            transaction_id=data["transaction_id"],
+            card_id=data["card_id"],
+            receiver_card_id=TOP_UP_ACTIVITY,
+            amount=data["amount"],
+            status=TRANSACTION_NEW_STATUS,
+            date=datetime.utcnow().strftime("%Y-%m-%d")
+        )
+        # Create an entry in the Transaction table with NEW status.
+        self.__db.create_transaction_record(record)
+
+        message = {
+            "eventName": Events.TRANSACTION_TOPUP.value,
+            "messageType": MESSAGE_TYPE_REQUEST,
+            "responseType": RESPONSE_SUCCESS,
+            "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
+            "message": "",
+            "data": {
+                "transaction_id": record.transaction_id,
+                "card_id": record.card_id,
+                "receiver_card_id": record.receiver_card_id,
+                "amount": record.amount,
+                "status": record.status,
+                "date": record.date
+            }
+        }
+        await card_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        self.__logger.info(f"Transaction: [{record.transaction_id}]. Status: {TRANSACTION_NEW_STATUS}.")
+
+    async def create_transaction(self, data: dict, card_service_topic):
         """
         Create transaction record in the database.
         Notify card service to reserve balance for the current transaction.
@@ -50,7 +87,7 @@ class TransactionService:
             "eventName":    Events.TRANSACTION_CREATED.value,
             "messageType":  MESSAGE_TYPE_REQUEST,
             "responseType": RESPONSE_SUCCESS,
-            "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
+            "producer":     TRANSACTION_SERVICE_PRODUCER_NAME,
             "message":      "",
             "data": {
                 "transaction_id": record.transaction_id,
