@@ -105,7 +105,7 @@ async def registration(request: Request):
             data = AuthUser(**form.__dict__).__dict__
             data['username'] = form.email
             data['card_id'] = form.card_id
-            print(data, data.values())
+            data['token'] = os.getenv('SECRET_TOKEN')
             response_2 = await post_request(client, request_url,
                                           headers={
                                               "Accept": "application/json"},

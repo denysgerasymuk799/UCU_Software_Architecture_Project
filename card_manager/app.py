@@ -110,21 +110,12 @@ async def create_card(request: Request):
     request_params = await request.json()
     print(request_params)
 
-    # try:
-    #     is_valid_token, msg = await validate_token(request_params, request)
-    # except:
-    #     return JSONResponse(content={'errors': 'Unauthorized'},
-    #                         status_code=status.HTTP_401_UNAUTHORIZED,
-    #                         headers=cors)
-    # if not is_valid_token:
-    #     return JSONResponse(content={'errors': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
-
-    if "card_id" not in request_params:
-        return JSONResponse(content={'content': 'no card id parameter'},
+    card_id = request_params["card_id"]
+    token = request_params["token"]
+    if token != os.getenv("SECRET_TOKEN"):
+        return JSONResponse(content={'errors': 'Wrong token'},
                             status_code=status.HTTP_401_UNAUTHORIZED,
                             headers=cors)
-
-    card_id = request_params["card_id"]
 
     db = CardManagerOperator(cassandra_client)
     try:
