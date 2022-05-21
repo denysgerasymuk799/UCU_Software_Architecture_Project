@@ -51,6 +51,11 @@ pip install -r requirements.txt
 python3.8 -m venv card_service_venv
 source card_service_venv/bin/activate
 pip install -r requirements.txt
+
+# Prepare the Card Manager Service
+python3.8 -m venv card_manager_venv
+source card_manager_venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### How to start the project
@@ -96,10 +101,19 @@ bash start_service.sh
 
 # Start the Card Service
 source card_service_venv/bin/activate
+bash start_service.sh
+
+# Start the Card Manager Service
+source card_manager_venv/bin/activate
+bash start_service.sh
 
 # Do not forget to add .env file
 faust -A kafka_streams worker -l info
 # or 
+bash start_service.sh
+
+# Start the Orchestration Service
+source orchestrator_service_venv/bin/activate
 bash start_service.sh
 ```
 

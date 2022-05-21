@@ -15,7 +15,7 @@ FAUST_PORT = "8007"
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 TRANSACTIONS_TOPIC = "TransactionService"
 CARD_TOPIC = "CardService"
-ALL_RESULTS_TOPIC = "AllResultsTopic"
+ALL_RESULTS_TOPIC = "ResultsTopic"
 
 # ------------------- Cassandra ---------------------
 CASSANDRA_HOST = os.getenv("CASSANDRA_HOST")
@@ -27,6 +27,7 @@ CERTIFICATE_PATH = "certificates/sf-class2-root.crt"
 
 # ------------- Cassandra Table Names ---------------
 TRANSACTIONS_TABLE = "transactions"
+TRANSACTIONS_BY_CARD_TABLE = "transactions_by_card"
 RESERVED_TR_TABLE = "reserved_transactions"
 CARDS_TABLE = "cards"
 TR_PREAGGREGATED_DAILY_TABLE = "transactions_preaggregated_daily"

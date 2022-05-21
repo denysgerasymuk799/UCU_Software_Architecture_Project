@@ -46,6 +46,7 @@ class User(BaseModel):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     hashed_password: Optional[str] = None
+    card_id: Optional[int] = None
 
 
 class UserInDB(User):
@@ -55,3 +56,4 @@ class UserInDB(User):
     disabled: bool
     firstname: Optional[str] = None
     lastname: Optional[str] = None
+    card_id: Optional[int] = None

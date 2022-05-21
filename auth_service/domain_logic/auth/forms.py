@@ -45,6 +45,8 @@ class NewAuthUserForm:
         self.firstname = form.get("firstname")
         self.lastname = form.get("lastname")
         self.role = form.get("role")
+        self.card_id = form.get("card_id")
+        self.email = form.get("email")
 
     async def is_valid(self):
         if not self.firstname or not self.firstname.isalpha():

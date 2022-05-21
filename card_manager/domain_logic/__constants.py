@@ -1,42 +1,21 @@
-import os
 from enum import Enum
 from dotenv import load_dotenv
+import os
 
 
 load_dotenv()
-# ------------- Constants to setup --------------
-DEBUG_MODE = False
-# ------------- Service Links --------------
-MONGODB_URL = os.getenv("MONGODB_URL")
+# ----------------- Service Links -------------------
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
-KAFKA_CONFIG_FILE = os.getenv("KAFKA_CONFIG_FILE")
+
+# ------------- Faust-related Constants -------------
+FAUST_HOST = os.getenv("FAUST_HOST")
+FAUST_PORT = "8007"
+
 # ------------- Kafka-related Constants -------------
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
-CONSUMER_GROUP = "tr_group"
-# ------------------ Kafka Topics -------------------
 TRANSACTIONS_TOPIC = "TransactionService"
-WALLET_TOPIC = "WalletService"
-ALL_RESULTS_TOPIC = "ResultsTopic"
-KAFKA_CONSUMER_GROUP = "result_consumer_group"
-# ------------- S3 Credentials --------------
-ORCHESTRATOR_USER_PUBLIC_KEY = os.getenv("ORCHESTRATOR_USER_PUBLIC_KEY")
-ORCHESTRATOR_USER_SECRET_KEY = os.getenv("ORCHESTRATOR_USER_SECRET_KEY")
-RESULTS_BUCKET_NAME = os.getenv("RESULTS_BUCKET_NAME")
-# ------------- Message Body Variables --------------
-RESPONSE_SUCCESS = 200
-MESSAGE_TYPE_RESPONSE = "Response"
-MESSAGE_TYPE_REQUEST = "Request"
-# ---------------- Logger Constants -----------------
-LOGS_PATH = "../logs/"
-WALLET_SERVICE_PRODUCER_NAME = "WalletServiceProducer"
-TRANSACTION_SERVICE_PRODUCER_NAME = "TransactionServiceProducer"
-# ----------------- DB Table Names ------------------
-TRANSACTION_TABLE = "transactions"
-RESERVED_TABLE = "reserved"
-WALLET_TABLE = "wallet"
-# ------- MongoDB Instanse Handler Variables --------
-NUM_RETRIES = 5
-MAX_RETURN_LENGTH = 100
+CARD_TOPIC = "CardService"
+ALL_RESULTS_TOPIC = "AllResultsTopic"
 
 # ------------------- Cassandra ---------------------
 CASSANDRA_HOST = os.getenv("CASSANDRA_HOST")
@@ -54,8 +33,21 @@ CARDS_TABLE = "cards"
 TR_PREAGGREGATED_DAILY_TABLE = "transactions_preaggregated_daily"
 TR_PREAGGREGATED_MONTHLY_TABLE = "transactions_preaggregated_monthly"
 
+# ------------- Message Body Variables --------------
+RESPONSE_SUCCESS = 200
+MESSAGE_TYPE_RESPONSE = "Response"
+MESSAGE_TYPE_REQUEST = "Request"
+TRANSACTION_NEW_STATUS = "NEW"
+TRANSACTION_PENDING_STATUS = "PENDING"
+TRANSACTION_COMPLETED_STATUS = "COMPLETED"
+TRANSACTION_FAILED_STATUS = "FAILED"
+
+# ---------------- Logger Constants -----------------
+LOGS_PATH = "../logs/"
+CARD_SERVICE_PRODUCER_NAME = "CardServiceProducer"
+TRANSACTION_SERVICE_PRODUCER_NAME = "TransactionServiceProducer"
+
 TOP_UP_ACTIVITY = "BALANCE-TOP-UP"
-TRANSACTION_ACTIVITY = "TRANSACTION"
 
 
 class Events(Enum):
@@ -67,7 +59,7 @@ class Events(Enum):
     TRANSACTION_CREATED = "EventTransactionCreated"
     RESERVATION_SUCCESS = "EventReservationSuccess"
     RESERVATION_FAILURE = "EventReservationFailure"
-    RESERVATION_CANCELL = "EventReservationCancell"
+    RESERVATION_CANCEL = "EventReservationCancel"
     TRANSACTION_PENDING = "EventTransactionPending"
     TRANSACTION_SUCCESS = "EventTransactionSuccess"
     TRANSACTION_FAILURE = "EventTransactionFailure"
