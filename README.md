@@ -65,6 +65,7 @@ npm install
 npm start
 ```
 
+
 ### How to start the project
 
 **Note,** specify the same ports like in the below examples, to start microservices, 
@@ -180,7 +181,7 @@ helm repo update
 helm upgrade --install confluent-operator confluentinc/confluent-for-kubernetes
 kubectl apply -f ./confluent-platform.yaml
 
-# View Constrol Center
+# View Control Center
 kubectl port-forward controlcenter-0 9021:9021
 
 # And go to http://localhost:9021
