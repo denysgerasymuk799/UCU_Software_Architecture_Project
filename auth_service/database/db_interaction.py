@@ -20,6 +20,8 @@ async def get_user(email: str):
     if user_dict is not None:
         logger.info(f'Found user in db: user email -- {user_dict["username"]}')
         user_dict['user_id'] = str(user_dict['_id'])
+        print("user_dict", user_dict)
+        print(user_dict.values())
         return UserInDB(**user_dict)
 
     raise HTTPException(status_code=404, detail=f"User {email} not found")

@@ -1,7 +1,6 @@
-from database.__db import TransactionServiceOperator, Transaction
+from database.__db import CardManagerOperator, Transaction
 from database.__cassandra_client import CassandraClient
 from domain_logic.__constants import *
-from domain_logic.__utils import get_logger
 from datetime import datetime
 
 import json
@@ -18,51 +17,12 @@ client = CassandraClient(
 client.connect()
 
 
-class TransactionService:
+class CardManager:
     """
-    Service for transaction processing.
-    Delegates balance reservation and transaction execution to CardService.
+    Service for card managing.
     """
     def __init__(self):
-        self.__logger = get_logger(name=TRANSACTIONS_TOPIC)
-        self.__db = TransactionServiceOperator(client)
-
-    async def create_topup_transaction(self, data: dict, card_service_topic):
-        """
-        Create balance top up transaction record in the database.
-        Notify card service to top up balance for the current transaction.
-
-        :param data: (dict) - transaction parameters.
-        :param card_service_topic: (faust.topic)
-        """
-        record = Transaction(
-            transaction_id=data["transaction_id"],
-            card_id=data["card_id"],
-            receiver_card_id=TOP_UP_ACTIVITY,
-            amount=data["amount"],
-            status=TRANSACTION_NEW_STATUS,
-            date=datetime.utcnow().strftime("%Y-%m-%d")
-        )
-        # Create an entry in the Transaction table with NEW status.
-        self.__db.create_transaction_record(record)
-
-        message = {
-            "eventName": Events.TRANSACTION_TOPUP.value,
-            "messageType": MESSAGE_TYPE_REQUEST,
-            "responseType": RESPONSE_SUCCESS,
-            "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
-            "message": "",
-            "data": {
-                "transaction_id": record.transaction_id,
-                "card_id": record.card_id,
-                "receiver_card_id": record.receiver_card_id,
-                "amount": record.amount,
-                "status": record.status,
-                "date": record.date
-            }
-        }
-        await card_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
-        self.__logger.info(f"Transaction: [{record.transaction_id}]. Status: {TRANSACTION_NEW_STATUS}.")
+        self.__db = CardManagerOperator(client)
 
     async def create_transaction(self, data: dict, card_service_topic):
         """
@@ -110,7 +70,7 @@ class TransactionService:
         """
         # Get a transaction record.
         record = self.__db.get_transaction_record(data["transaction_id"])
-        transaction_id, card_id, receiver_card_id, amount, status, date = record
+        transaction_id, card_id = record[0], record[1]
         # Mark a transaction as such that is waiting to be executed.
         self.__db.update_transaction_status(transaction_id, TRANSACTION_PENDING_STATUS)
 
@@ -121,8 +81,6 @@ class TransactionService:
             "responseType": RESPONSE_SUCCESS,
             "producer": TRANSACTION_SERVICE_PRODUCER_NAME,
             "message":      "",
-            "amount": amount,
-            "date": date,
             "data": {
                 "transaction_id": transaction_id,
                 "card_id": card_id
@@ -140,15 +98,13 @@ class TransactionService:
         """
         # Get transaction record.
         record = self.__db.get_transaction_record(transaction_id)
-        transaction_id, card_id, receiver_card_id, amount, status, date = record
+        transaction_id, card_id, receiver_card_id, status = record[0], record[1], record[2], record[4]
 
         message = {
             "transaction_id": transaction_id,
             "card_id": card_id,
-            "receiver_card_id": TOP_UP_ACTIVITY if card_id == receiver_card_id else receiver_card_id,
-            "amount": amount,
-            "date": date,
-            "status": "COMPLETED" if status == TRANSACTION_COMPLETED_STATUS else "FAILED"
+            "receiver_card_id": receiver_card_id,
+            "completed": status == TRANSACTION_COMPLETED_STATUS
         }
         # Send response to SAGA.
         await results_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())

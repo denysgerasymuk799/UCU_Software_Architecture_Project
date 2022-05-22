@@ -23,7 +23,7 @@ const LoginForm = () => {
   const classes = useStyles();
 
   const [formState, setFormState] = useState({
-    email: 'dmytrolopushanskyyy@gmail.com',
+    email: 'lopushanskyy@gmail.co',
     password: '12345',
     error: '',
   })
@@ -50,7 +50,7 @@ const LoginForm = () => {
     e.preventDefault()
     const { email, password } = formState
     const formData = new FormData()
-    formData.append('email', email)
+    formData.append('username', email)
     formData.append('password', password)
     
     await api
@@ -63,6 +63,10 @@ const LoginForm = () => {
 
         localStorage.setItem('access_token', accessToken)
         localStorage.setItem('refresh_token', refreshToken)
+        localStorage.setItem('email', apiResponse.data.email)
+        localStorage.setItem('user_name', apiResponse.data.user_name)
+        localStorage.setItem('card_id', apiResponse.data.card_id)
+        localStorage.setItem('user_id', apiResponse.data.user_id)
         history.go('/profile')
       })
       .catch(error => {

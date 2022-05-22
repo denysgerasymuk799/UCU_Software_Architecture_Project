@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 import json
 import aiohttp
@@ -13,12 +14,22 @@ from config import logger
 from domain_logic.__constants import *
 from domain_logic.utils.cryptographer import Cryptographer
 from domain_logic.kafka.service_producer import ServiceProducer
-from domain_logic.kafka.result_consumer import consume_results
+from domain_logic.kafka.result_consumer import consume_results, session
 
+from database.__cassandra_client import CassandraClient
+from database.__db import TransactionServiceOperator
 
 # Create app object
 app = FastAPI()
 
+cassandra_client = CassandraClient(
+    host=CASSANDRA_HOST,
+    port=CASSANDRA_PORT,
+    keyspace=CASSANDRA_KEYSPACE,
+    username=AMAZOM_KEYSPACES_USERNAME,
+    password=AMAZOM_KEYSPACES_PASSWORD
+)
+cassandra_client.connect()
 
 asyncio.create_task(consume_results())
 
@@ -70,10 +81,10 @@ async def validate_token(form, request):
     authorizer_response = json.loads(authorizer_response)
     logger.debug(f'authorizer_response --  {authorizer_response}')
     if not isinstance(authorizer_response, dict):
-        return False, authorizer_response
+        return False, authorizer_response, ''
 
     if 'signature' not in authorizer_response.keys():
-        return False, authorizer_response
+        return False, authorizer_response, ''
 
     signature = long_to_bytes(authorizer_response['signature'])
 
@@ -91,7 +102,7 @@ async def validate_token(form, request):
         msg = "Transaction is not verified, since token is invalid!"
         is_valid_token = False
     logger.info(msg)
-    return is_valid_token, msg
+    return is_valid_token, msg, authorizer_response['card_id']
 
 
 @app.options("/{full_path:path}")
@@ -102,15 +113,18 @@ async def options():
 @app.post("/handle_transaction")
 async def handle_transaction(request: Request):
     form = await request.form()
-    is_valid_token, msg = await validate_token(form, request)
+    is_valid_token, msg, auth_card_id = await validate_token(form, request)
     if not is_valid_token:
         return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
     request_params = form.__dict__['_dict']
+
+    if str(auth_card_id) != request_params['card_id']:
+        return JSONResponse(content={'content': 'Wrong user sender card id'}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
     transaction_id = str(uuid.uuid1())
     producer = ServiceProducer("ServiceProducer")
 
-    # TODO: add web validation on transaction form. Use database.forms.TransactionForm
     if request_params["transaction_type"] == TOP_UP_ACTIVITY:
         event_name = Events.TRANSACTION_TOPUP.value
     else:
@@ -133,3 +147,121 @@ async def handle_transaction(request: Request):
     logger.info(f'The next message is sent -- {message_}')
 
     return JSONResponse(content={'transaction_id': transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
+
+
+@app.get("/get_notifications")
+async def get_notifications(request: Request):
+    request_params = request.query_params
+    print('request_params', request_params)
+
+    try:
+        last_transaction_id = request_params['last_transaction_id']
+    except (ValueError, KeyError):
+        return JSONResponse(content={'content': 'no last_transaction_id parameter'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+    try:
+        is_valid_token, msg, auth_card_id = await validate_token(request_params, request)
+    except:
+        return JSONResponse(content={'content': 'unauthorized'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+
+    if not is_valid_token:
+        return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+    date = datetime.utcnow().strftime("%Y-%m-%d")
+
+    s3_client = session.client('s3')
+    response = s3_client.list_objects_v2(
+        Bucket=RESULTS_BUCKET_NAME,
+        Prefix=f'{auth_card_id}/{date}'
+    )
+    print(f'{auth_card_id}/{date}')
+
+    if 'Contents' not in response:
+        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': last_transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
+
+    response_sorted = sorted(response['Contents'], key=lambda a: a['LastModified'], reverse=True)
+
+    if not last_transaction_id:
+        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': response_sorted[0]['Key']},
+                            status_code=status.HTTP_200_OK, headers=cors)
+
+    new_transactions = []
+    for obj in response_sorted:
+        print('obj["Key"]', obj["Key"], '\n')
+        if obj["Key"] == last_transaction_id:
+            break
+        obj = s3_client.get_object(
+            Bucket=RESULTS_BUCKET_NAME,
+            Key=f'{obj["Key"]}'
+        )
+        j = json.loads(obj['Body'].read())
+        new_transactions.append(j)
+    print("new_transactions", len(new_transactions))
+    return JSONResponse(content={'new_transactions': new_transactions, 'last_transaction_id': response_sorted[0]['Key']}, status_code=status.HTTP_200_OK, headers=cors)
+
+
+@app.get("/get_balance")
+async def get_balance(request: Request):
+    request_params = request.query_params
+    print('request_params', request_params)
+
+    try:
+        card_id = int(request_params['card_id'])
+    except (ValueError, KeyError):
+        return JSONResponse(content={'content': 'no card id parameter'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+
+    is_valid_token, msg, auth_card_id = await validate_token(request_params, request)
+
+    if not is_valid_token:
+        return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+    if auth_card_id != card_id:
+        return JSONResponse(content={'content': 'Wrong user sender card id'}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+    db = TransactionServiceOperator(cassandra_client)
+    balance = db.get_balance(card_id)
+
+    return JSONResponse(content={'balance': balance}, status_code=status.HTTP_200_OK, headers=cors)
+
+
+@app.get("/get_transactions")
+async def get_transactions(request: Request):
+    request_params = request.query_params
+    print('request_params', request_params)
+
+    try:
+        card_id = int(request_params['card_id'])
+        start_idx = int(request_params['start_idx'])
+    except (ValueError, KeyError):
+        return JSONResponse(content={'content': 'no card id or no start_idx parameter'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+
+    is_valid_token, msg, auth_card_id = await validate_token(request_params, request)
+
+    if auth_card_id != card_id:
+        return JSONResponse(content={'content': 'Wrong user sender card id'}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+    if not is_valid_token:
+        return JSONResponse(content={'content': msg},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+
+    db = TransactionServiceOperator(cassandra_client)
+    transactions_raw = db.get_transactions_for_card(card_id, start_idx)
+    transactions = list()
+    for trans_raw in transactions_raw:
+        trans = dict()
+        fields = ["transaction_id", "card_id", "receiver_card_id", "amount", "status", "date"]
+        for item, field in zip(trans_raw, fields):
+            trans[field] = str(item)
+        transactions.append(trans)
+    print(transactions_raw)
+
+    return JSONResponse(content={'transactions': transactions}, status_code=status.HTTP_200_OK, headers=cors)
+

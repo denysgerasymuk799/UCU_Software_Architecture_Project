@@ -23,7 +23,7 @@ transaction_service_topic = app.topic(TRANSACTIONS_TOPIC)
 card_service_topic = app.topic(CARD_TOPIC)
 results_topic = app.topic(ALL_RESULTS_TOPIC)
 
-# Initialize transaction service instanse.
+# Initialize transaction service instance.
 transaction_service = TransactionService()
 
 

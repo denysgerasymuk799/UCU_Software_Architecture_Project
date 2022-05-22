@@ -95,7 +95,7 @@ const RegistrationForm = () => {
       .register(formData)
       .then(apiResponse => {
         console.log('apiResponse', apiResponse.data)
-        history.go('/')
+        window.location.href = '/login';
       })
       .catch(error => {
         console.log('error', error)
@@ -107,7 +107,7 @@ const RegistrationForm = () => {
     <section id="right-section">
       <form>
         <h3>Реєстрація</h3>
-        <p className={styles.message}>{formState.error}</p>
+        <p className={styles.message}>{formState.error} Переконайтеся, що дата народження вказана у форматі дд/мм/рррр.</p>
         <TextField
           fullWidth
           label="Ім'я"
@@ -157,7 +157,7 @@ const RegistrationForm = () => {
         />
         <TextField
           fullWidth
-          label="Дата народження"
+          label="Дата народження у форматі дд/мм/рррр"
           name="birthday_date"
           variant="outlined"
           className={styles.nomoInput + " " + classes.root}

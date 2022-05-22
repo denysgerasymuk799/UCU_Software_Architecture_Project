@@ -18,7 +18,7 @@ python3 src/broker.py
 python3 wallet_service.py
 
 # Terminal-4
-python3 transaction_service.py
+python3 card_manager.py
 ```
 - Start Kafka Producer:
 ```bash

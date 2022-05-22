@@ -46,6 +46,7 @@ class User(BaseModel):
     city: Optional[str] = None
     address: Optional[str] = None
     disabled: Optional[bool] = None
+    card_id: Optional[int] = None
 
 
 class UserInDB(User):
@@ -61,3 +62,4 @@ class AuthUser(BaseModel):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     hashed_password: Optional[str] = None
+    card_id: Optional[int] = None

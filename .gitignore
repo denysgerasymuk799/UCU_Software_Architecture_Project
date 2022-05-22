@@ -15,6 +15,8 @@ card-service-data
 confluent_credentials.config
 *.crt
 20K.txt
+secrets
+env.js
 
 doc/build/*
 doc/_build/*
@@ -209,3 +211,4 @@ dmypy.json
 
 venv/
 # End of https://www.gitignore.io/api/python,pycharm+all
+/orchestrator_service/secrets/

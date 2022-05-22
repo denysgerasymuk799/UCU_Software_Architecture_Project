@@ -9,6 +9,7 @@ import env from './env'
 
 const registrationServiceURL = env.REGISTRATION_URL
 const authServiceURL = env.AUTH_URL
+const transactionServiceURL = env.TRANSACTION_URL
 
 // request interceptor to add the auth token header to requests
 axios.interceptors.request.use(
@@ -16,7 +17,6 @@ axios.interceptors.request.use(
     const accessToken = localStorage.getItem('access_token')
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`
-      config.headers.ACCESS_TOKEN = HARAPI_ACCESS_TOKEN
     }
     console.log(config)
     return config
@@ -31,22 +31,16 @@ axios.interceptors.response.use(
   response => response,
   error => {
     const originalRequest = error.config
-    const refreshToken = localStorage.getItem('refresh')
+    const refreshToken = localStorage.getItem('refresh_token')
     if (
       refreshToken &&
       error.response.status === 401 &&
       !originalRequest.retry
     ) {
       originalRequest.retry = true
-      return axios
-        .post(`${baseUrlAuth}/refresh`, { refreshToken })
-        .then(res => {
-          if (res.status === 200) {
-            localStorage.setItem('access_token', res.data.accessToken)
-            console.log('Access token refreshed!')
-            return axios(originalRequest)
-          }
-        })
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location =  '/login';
     }
     return Promise.reject(error)
   },
@@ -56,6 +50,11 @@ axios.interceptors.response.use(
 const api = {
   register: body => axios.post(`${registrationServiceURL}/registration`, body),
   login: body => axios.post(`${authServiceURL}/login`, body),
+  handle_transaction: body => axios.post(`${transactionServiceURL}/handle_transaction`, body),
+  get_balance: card_id => axios.get(`${transactionServiceURL}/get_balance?card_id=${card_id}`),
+  get_transactions: (card_id, idx) => axios.get(`${transactionServiceURL}/get_transactions?card_id=${card_id}&start_idx=${idx}`),
+  get_notifications: last_transaction_id => axios.get(`${transactionServiceURL}/get_notifications?last_transaction_id=${last_transaction_id}`),
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default api

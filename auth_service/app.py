@@ -27,7 +27,6 @@ cors = {
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
 }
 
-
 @app.options("/{full_path:path}")
 async def options():
     return JSONResponse(status_code=status.HTTP_200_OK, headers=cors)
@@ -64,7 +63,7 @@ async def authenticate_user(email: str, password: str):
         return False
     if not verify_password(password, user.hashed_password):
         return False
-    logger.info("Password in verified")
+    logger.info("Password is verified")
     return user
 
 
@@ -168,7 +167,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id}
+    print(dir(user))
+    return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id,
+            "user_name": f"{user.firstname} {user.lastname}", "card_id": user.card_id,
+            "email": user.username}
 
 
 @app.post("/insert_new_auth_user")
@@ -180,6 +182,7 @@ async def insert_new_auth_user(request: Request):
     * firstname: str, user firstname
     * lastname: str, user lastname
     * role: str, user role
+    * card_id: str, assigned card id
     """
     print('request.json() -- ', await request.json())
     form = NewAuthUserForm(request)
@@ -188,6 +191,7 @@ async def insert_new_auth_user(request: Request):
     form.disabled = False
     if await form.is_valid():
         try:
+            print(form.__dict__.values())
             new_user_id = await create_new_user(db, User(**form.__dict__))
             logger.info(f'new_auth_user_id -- {new_user_id}')
 
@@ -208,6 +212,9 @@ async def login(request: Request):
     * username: str, equal to email
     * password: str, user password
     * authorization method 'bearer' in headers
+    Returns: tokens, user_id,
+    name, email,
+    card id
     """
     logger.info(f'Request form -- {await request.form()}')
     form = LoginForm(request)
@@ -222,7 +229,7 @@ async def login(request: Request):
         form.__dict__.get("errors").append(f'HTTPException: {err.detail}')
 
     logger.info(f'Request errors: {form.__dict__.get("errors")}')
-    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, headers=cors,
+    return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, headers=cors,
                         content={"errors": form.__dict__.get("errors")})
 
 
@@ -242,5 +249,6 @@ async def authorize_transaction(request: Request, current_user: User = Depends(g
     request_body_bytes = bytes(str(request_body), 'utf-8')
     request_body['signature'] = bytes_to_long(cryptographer.sign(request_body_bytes))
     request_body['validated'] = True
+    request_body['card_id'] = current_user.card_id
     response = json.dumps(request_body)
     return Response(response, headers=cors, status_code=200)
