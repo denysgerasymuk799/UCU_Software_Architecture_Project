@@ -24,13 +24,10 @@ kafka-topics --zookeeper 127.0.0.1:2181  --topic TransactionService --create --p
 kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic TransactionService --from-beginning
 
 
-# Prepare the web app
 # Firstly, create a new virtual env
 # https://www.linuxcapable.com/how-to-setup-python-3-virtual-environment-on-ubuntu-20-04/
 sudo apt install python3.8-venv
 python3.8 -m venv web_app_venv
-source web_app_venv/bin/activate
-pip install -r requirements.txt
 
 # Prepare the Auth Service
 python3.8 -m venv auth_service_venv
@@ -56,6 +53,16 @@ pip install -r requirements.txt
 python3.8 -m venv card_manager_venv
 source card_manager_venv/bin/activate
 pip install -r requirements.txt
+
+# Prepare the web app
+# Install npm on Ubuntu:
+# https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04
+# 
+# In case of errors on linux check this link:
+# https://stackoverflow.com/questions/43494794/webpack-html-webpack-plugin-error-child-compilation-failed
+npm install
+
+npm start
 ```
 
 ### How to start the project

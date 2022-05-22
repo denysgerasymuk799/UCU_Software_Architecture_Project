@@ -8,6 +8,7 @@ from ssl import SSLContext, PROTOCOL_TLSv1_2, CERT_REQUIRED
 
 from domain_logic.__constants import *
 
+
 class CassandraClient:
     def __init__(self, host, port, keyspace, username, password):
         self.host = host
