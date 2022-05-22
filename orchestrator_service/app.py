@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 import json
 import aiohttp
@@ -13,7 +14,7 @@ from config import logger
 from domain_logic.__constants import *
 from domain_logic.utils.cryptographer import Cryptographer
 from domain_logic.kafka.service_producer import ServiceProducer
-from domain_logic.kafka.result_consumer import consume_results
+from domain_logic.kafka.result_consumer import consume_results, session
 
 from database.__cassandra_client import CassandraClient
 from database.__db import TransactionServiceOperator
@@ -146,6 +147,60 @@ async def handle_transaction(request: Request):
     logger.info(f'The next message is sent -- {message_}')
 
     return JSONResponse(content={'transaction_id': transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
+
+
+@app.get("/get_notifications")
+async def get_notifications(request: Request):
+    request_params = request.query_params
+    print('request_params', request_params)
+
+    try:
+        last_transaction_id = request_params['last_transaction_id']
+    except (ValueError, KeyError):
+        return JSONResponse(content={'content': 'no last_transaction_id parameter'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+    try:
+        is_valid_token, msg, auth_card_id = await validate_token(request_params, request)
+    except:
+        return JSONResponse(content={'content': 'unauthorized'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
+
+    if not is_valid_token:
+        return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+    date = datetime.utcnow().strftime("%Y-%m-%d")
+
+    s3_client = session.client('s3')
+    response = s3_client.list_objects_v2(
+        Bucket=RESULTS_BUCKET_NAME,
+        Prefix=f'{auth_card_id}/{date}'
+    )
+    print(f'{auth_card_id}/{date}')
+
+    if 'Contents' not in response:
+        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': last_transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
+
+    response_sorted = sorted(response['Contents'], key=lambda a: a['LastModified'], reverse=True)
+
+    if not last_transaction_id:
+        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': response_sorted[0]['Key']},
+                            status_code=status.HTTP_200_OK, headers=cors)
+
+    new_transactions = []
+    for obj in response_sorted:
+        print('obj["Key"]', obj["Key"], '\n')
+        if obj["Key"] == last_transaction_id:
+            break
+        obj = s3_client.get_object(
+            Bucket=RESULTS_BUCKET_NAME,
+            Key=f'{obj["Key"]}'
+        )
+        j = json.loads(obj['Body'].read())
+        new_transactions.append(j)
+    print("new_transactions", len(new_transactions))
+    return JSONResponse(content={'new_transactions': new_transactions, 'last_transaction_id': response_sorted[0]['Key']}, status_code=status.HTTP_200_OK, headers=cors)
 
 
 @app.get("/get_balance")

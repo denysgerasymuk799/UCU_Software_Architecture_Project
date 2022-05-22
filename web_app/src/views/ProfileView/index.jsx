@@ -1,6 +1,5 @@
 /* eslint-disable jsx-a11y/media-has-caption */
 import React, { useState, useEffect, useRef } from 'react'
-import AWS from 'aws-sdk';
 import NavDropdown from '../../modules/NavDropdown'
 import SettingsModal from '../../modules/SettingsModal'
 import PaymentModal from '../../modules/PaymentModal'
@@ -8,16 +7,8 @@ import AddMoneyModal from '../../modules/AddMoneyModal'
 import TableRow from '../../modules/TableRow'
 import { showSuccessMessage, useInterval } from '../../utils';
 import api from '../../api';
-import env from '../../env';
 
-AWS.config.update({
-  accessKeyId: env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: env.AWS_ACCESS_SECRET_KEY,
-  region: env.AWS_REGION,
-});
-
-const s3 = new AWS.S3();
-var lastTransactionID = null;
+var lastTransactionID = '';
 
 function dedup(a, param){
   return a.filter(function(item, pos, array){
@@ -42,6 +33,27 @@ const ProfileView = () => {
         })
   }
 
+  function poll_for_notifications() {
+    console.log('Making a notification request', transactions);
+    api
+    .get_notifications(lastTransactionID)
+    .then(apiResponse => {
+      console.log('notifications', apiResponse);
+      lastTransactionID = apiResponse.data.last_transaction_id;
+      if (apiResponse.data.new_transactions.length === 0) {
+        return;
+      }
+      var new_transactions = [...apiResponse.data.new_transactions, ...transactions];
+      console.log('S3 query', new_transactions);
+      setTransactions(new_transactions);
+      showSuccessMessage("Успішно опрацьовано нову транзакцію!");
+      updateBalance();
+    })
+    .catch(error => {
+      console.log('error', error);
+    });
+  }
+
   const newTransactions = () => {
     api
         .get_transactions(localStorage.getItem('card_id'), lastTransactionIdx)
@@ -54,6 +66,10 @@ const ProfileView = () => {
 
             var diff = new_transactions_dedup.length - transactions.length;
             setLastTransactionIdx(lastTransactionIdx+diff);
+
+            if (diff === 0) {
+              document.getElementById('more-btn').style.display = 'none';
+            }
           } else {
             document.getElementById('more-btn').style.display = 'none';
           }
@@ -61,68 +77,6 @@ const ProfileView = () => {
         .catch(error => {
           console.log('error', error);
         })
-  }
-
-  function poll_for_notifications() {
-    console.log('Making a notification request');
-  
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
-    
-    today = yyyy + '-' + mm + '-' + dd;
-  
-    const prefix = `${localStorage.getItem('card_id')}/${today}/`;
-
-    const list_params = {
-      Bucket: env.AWS_BUCKET_NAME,
-      Prefix: prefix
-    };
-
-    // Get a list of items in the bucket
-    s3.listObjectsV2(list_params, (err, data) => {
-      if (err) {
-        console.log(err, err.stack);
-      } else {
-        var resp = data.Contents.sort((a,b) => b.LastModified - a.LastModified);
-        console.log('S3 response', resp);
-        if (lastTransactionID === null) {
-          try {
-            lastTransactionID = resp[0].Key;
-          } catch {
-            lastTransactionID = "";
-          }
-          return;
-        }
-  
-        var get_params;
-        for (const trans of resp) {
-          if (lastTransactionID === trans.Key) {
-            lastTransactionID = resp[0].Key;
-            return;
-          }
-          // Add element
-          console.log("New transaction!", trans);
-          get_params = {
-            Bucket: env.AWS_BUCKET_NAME,
-            Key: trans.Key,
-            ResponseContentType: 'application/json'
-          };
-          s3.getObject(get_params, (err, data) => {
-            var response = data.Body.toString('utf-8');
-            response = JSON.parse(response)
-            var new_transactions = [response, ...transactions];
-            console.log('S3 query', transactions, response, new_transactions);
-            setTransactions(new_transactions);
-            showSuccessMessage("Успішно опрацьовано нову транзакцію!");
-            updateBalance();
-          }
-        );
-        }
-        lastTransactionID = resp[0].Key;
-      }
-    });
   }
   
   useInterval(() => {
@@ -141,7 +95,12 @@ const ProfileView = () => {
     
     updateBalance();
     newTransactions();
-    poll_for_notifications();
+    // Set lastTransactionID
+    if (lastTransactionID === ""){
+      api.get_notifications(lastTransactionID).then(apiResponse => {
+        lastTransactionID = apiResponse.data.last_transaction_id;
+      });
+    }
   }, []);
 
 
