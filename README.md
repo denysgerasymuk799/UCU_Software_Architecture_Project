@@ -3,9 +3,10 @@
 ## Features
 
 - Functionality: `Deposit money` `Send money` `List transactions` `Login/Sign Up with JWT Token`
-- Technologies: `Kafka` `AWS` `React` `Python` `Docker` 
-- AWS Resources: `Keyspaces` `EKS`  `ELB`  `CloudWatch` `API Gateway`  `S3` `Amplify` `IAM` `KMS` 
-- Orchestration: `Kubernetes` `Cortex` `SAGA Orchestration` 
+- Technologies: `Kafka` `AWS` `React` `Python` `Docker` `Grafana` `Prometheus`
+- Frameworks: `FastAPI` `Faust`
+- AWS Resources: `Keyspaces` `EKS`  `ELB`  `CloudWatch` `API Gateway`  `S3` `Amplify` `IAM` `KMS` `VPC`
+- Orchestration: `Kubernetes` `Cortex`
 
 
 ## Description
