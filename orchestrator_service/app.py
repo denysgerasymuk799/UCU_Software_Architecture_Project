@@ -180,7 +180,7 @@ async def get_notifications(request: Request):
     print(f'{auth_card_id}/{date}')
 
     if 'Contents' not in response:
-        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': last_transaction_id}, status_code=status.HTTP_200_OK, headers=cors)
+        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': 'empty'}, status_code=status.HTTP_200_OK, headers=cors)
 
     response_sorted = sorted(response['Contents'], key=lambda a: a['LastModified'], reverse=True)
 
