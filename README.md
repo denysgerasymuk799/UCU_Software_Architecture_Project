@@ -1,34 +1,33 @@
 # UCU Software Architecture Project
 
+## Features
+
+- Functionality: `Deposit money` `Send money` `List transactions` `Login/Sign Up with JWT Token`
+- Technologies: `Kafka` `AWS` `React` `Python` `Docker` 
+- AWS Resources: `Keyspaces` `EKS`  `ELB`  `CloudWatch` `API Gateway`  `S3` `Amplify` `IAM` `KMS` 
+- Orchestration: `Kubernetes` `Cortex` `SAGA Orchestration` 
+
+
+## Description
+
+**unobank** is a web banking project creared by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
+
 ## How to run the project
 
 ### Kafka
+First run Kafka to enable communication between microservices. Download Kafka, unzip the archive and run the below scripts:
 
-* Start zookeeper server: `zookeeper-server-start.sh config/zookeeper.properties`
-* Start kafka bootstrap server: `kafka-server-start.sh config/server.properties`
+* Start zookeeper server: `./bin/zookeeper-server-start.sh config/zookeeper.properties`
+* Start kafka bootstrap server: `./bin/kafka-server-start.sh config/server.properties`
+* Create topic: `./bin/kafka-topics.sh --zookeeper 127.0.0.1:2181  --topic TransactionService --create --partitions 3 --replication-factor 1`
 
+You can verify everything works correctly using the command below to read messages from topics with Kafka consumer CLI:  
+`./bin/kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic TransactionService --from-beginning`
 
-### Prepare configurations
+### Prepare Configurations
 
+For each of the microservices, create a virtual environment. More info: https://www.linuxcapable.com/how-to-setup-python-3-virtual-environment-on-ubuntu-20-04/
 ```shell
-# Start zookeeper server
-zookeeper-server-start.sh config/zookeeper.properties
-
-# Start kafka bootstrap server
-kafka-server-start.sh config/server.properties
-
-# Create Kafka topics
-kafka-topics --zookeeper 127.0.0.1:2181  --topic TransactionService --create --partitions 3 --replication-factor 1
-
-# Read messages from topics with Kafka consumer CLI
-kafka-console-consumer --bootstrap-server 127.0.0.1:9092 --topic TransactionService --from-beginning
-
-
-# Firstly, create a new virtual env
-# https://www.linuxcapable.com/how-to-setup-python-3-virtual-environment-on-ubuntu-20-04/
-sudo apt install python3.8-venv
-python3.8 -m venv web_app_venv
-
 # Prepare the Auth Service
 python3.8 -m venv auth_service_venv
 source auth_service_venv/bin/activate
@@ -54,58 +53,30 @@ python3.8 -m venv card_manager_venv
 source card_manager_venv/bin/activate
 pip install -r requirements.txt
 
-# Prepare the web app
-# Install npm on Ubuntu:
-# https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04
-# 
-# In case of errors on linux check this link:
-# https://stackoverflow.com/questions/43494794/webpack-html-webpack-plugin-error-child-compilation-failed
-npm install
-
-npm start
+# Prepare the Orchestration Service
+python3.8 -m venv orchestrator_service_venv
+source orchestrator_service_venv/bin/activate
+pip install -r requirements.txt
 ```
 
+### Start the Microservices
 
-### How to start the project
+**NOTE:** To start microservices specify **the same ports as in the examples below**, since links to microservices are temporary hardcoded in the .env files.
 
-**Note,** specify the same ports like in the below examples, to start microservices, 
-since links to microservices are temporary hardcoded:
+**NOTE:** Inside each microservice folder add a .env file and secrets folder. Otherwise, the launch will be unsuccessful.
 
 ```shell
-
-# Start the web app
-source web_app_venv/bin/activate
-gunicorn --bind 127.0.0.1:8000  app:app
-# or 
-bash start_service.sh
-
-
 # Start the Auth Service
 source auth_service_venv/bin/activate
-
-# Do not forget to add .env file and secret folder
-uvicorn app:app --workers 2 --reload --port 8002
-# or 
 bash start_service.sh
-
 
 # Start the Registration Service
 source registration_service_venv/bin/activate
-
-# Do not forget to add .env file
-uvicorn app:app --workers 2 --reload --port 8003
-# or 
 bash start_service.sh
-
 
 # Start the Transaction Service
 source transaction_service_venv/bin/activate
-
-# Do not forget to add .env file
-faust -A kafka_streams worker -l info
-# or 
 bash start_service.sh
-
 
 # Start the Card Service
 source card_service_venv/bin/activate
@@ -115,17 +86,31 @@ bash start_service.sh
 source card_manager_venv/bin/activate
 bash start_service.sh
 
-# Do not forget to add .env file
-faust -A kafka_streams worker -l info
-# or 
-bash start_service.sh
-
 # Start the Orchestration Service
 source orchestrator_service_venv/bin/activate
 bash start_service.sh
+
+# Start Kafka Streams workers
+faust -A kafka_streams worker -l info
+# or 
+bash start_service.sh
 ```
 
-### How to deploy the project
+### Start the FrontEnd
+
+FrontEnd is implemented using React. To launch the app, install npm on Ubuntu:  
+https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04  
+
+In case of errors on linux check this link:
+https://stackoverflow.com/questions/43494794/webpack-html-webpack-plugin-error-child-compilation-failed
+
+If above step is performed, run the below commands:
+```
+npm install
+npm start
+```
+
+### Deploy the Project
 
 ```shell
 # Main reference -- https://docs.cortex.dev/workloads/async/example
@@ -153,7 +138,7 @@ docker push denys8herasymuk/web-banking-transaction-service:0.1
 ```
 
 
-### Kubernetes cluster info
+### Kubernetes Cluster Info
 
 ```shell
 # Get a cluster info
