@@ -5,13 +5,14 @@
 - Functionality: `Deposit money` `Send money` `List transactions` `Login/Sign Up with JWT Token`
 - Technologies: `Kafka` `AWS` `React` `Python` `Docker` `Grafana` `Prometheus`
 - Frameworks: `FastAPI` `Faust`
-- AWS Resources: `Keyspaces` `EKS`  `ELB`  `CloudWatch` `API Gateway`  `S3` `Amplify` `IAM` `KMS` `VPC`
+- Databases: `AWS Keyspaces` `MongoDB`
+- AWS Resources: `EKS`  `ELB`  `CloudWatch` `API Gateway`  `S3` `Amplify` `IAM` `KMS` `VPC`
 - Orchestration: `Kubernetes` `Cortex`
 
 
 ## Description
 
-**unobank** is a web banking project creared by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
+**unobank** is a web banking project creared by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. The system was designed to support a large number of users, since we use NoSQL databases and **event-sourcing pattern**. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
 
 ## Run the Project
 
