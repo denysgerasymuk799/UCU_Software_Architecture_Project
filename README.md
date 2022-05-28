@@ -14,6 +14,19 @@
 
 **unobank** is a web banking project creared by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. The system was designed to support a large number of users, since we use NoSQL databases and **event-sourcing pattern**. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
 
+The high-level diagram of our services from the infrastructure side looks like this:  
+
+![SA_project_architecture_v2](https://user-images.githubusercontent.com/25267308/170844994-5ead15a3-6e9d-4e34-8929-6560eaca19c2.png)  
+
+The high-level diagram of our services from the interaction side looks like this:  
+
+![interaction](https://user-images.githubusercontent.com/25267308/170845004-c6acd272-bac7-48c3-a924-cd6b4bec010a.png)  
+
+Transaction processing in more detail:  
+
+![transactions](https://user-images.githubusercontent.com/25267308/170844977-67ba2bec-4c75-48ab-bca6-a7b775ef2b24.svg)  
+
+
 ## Run the Project
 
 ### Start Kafka
