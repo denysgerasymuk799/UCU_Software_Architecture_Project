@@ -12,9 +12,9 @@
 
 **unobank** is a web banking project creared by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
 
-## How to run the project
+## Run the Project
 
-### Kafka
+### Start Kafka
 First run Kafka to enable communication between microservices. Download Kafka, unzip the archive and run the below scripts:
 
 * Start zookeeper server: `./bin/zookeeper-server-start.sh config/zookeeper.properties`
