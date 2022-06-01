@@ -21,6 +21,11 @@ The high-level diagram of our services from the infrastructure side looks like t
   <img src="https://user-images.githubusercontent.com/42843889/171362161-0bf51dfd-8411-454c-aa54-9dda4bef23bf.png" alt="SA_project_architecture_v4"/>
 </p>
 
+<pre>
+
+
+</pre>
+
 
 The high-level diagram of our services from the interaction side looks like this:  
 
