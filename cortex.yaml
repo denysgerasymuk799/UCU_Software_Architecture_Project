@@ -1,0 +1,27 @@
+- name: registration-service
+  kind: RealtimeAPI
+  pod:
+    containers:
+    - name: api
+      image: 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_registration_service
+
+- name: auth-service
+  kind: RealtimeAPI
+  pod:
+    containers:
+    - name: api
+      image: 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_auth_service
+
+- name: orchestrator-service
+  kind: RealtimeAPI
+  pod:
+    containers:
+    - name: api
+      image: 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_orchestrator_service
+
+- name: card-manager-service
+  kind: RealtimeAPI
+  pod:
+    containers:
+    - name: api
+      image: 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_card_manager_service

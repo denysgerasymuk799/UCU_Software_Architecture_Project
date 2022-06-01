@@ -16,15 +16,40 @@
 
 The high-level diagram of our services from the infrastructure side looks like this:  
 
-![SA_project_architecture_v2](https://user-images.githubusercontent.com/25267308/170844994-5ead15a3-6e9d-4e34-8929-6560eaca19c2.png)  
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/42843889/171362161-0bf51dfd-8411-454c-aa54-9dda4bef23bf.png" alt="SA_project_architecture_v4"/>
+</p>
+
 
 The high-level diagram of our services from the interaction side looks like this:  
 
-![interaction](https://user-images.githubusercontent.com/25267308/170845004-c6acd272-bac7-48c3-a924-cd6b4bec010a.png)  
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/25267308/170845004-c6acd272-bac7-48c3-a924-cd6b4bec010a.png" alt="interaction"/>
+</p>
+
+
+**Cassandra interaction**
+
+Card Manager — Cassandra(cards)
+
+Card Service — Cassandra(cards, reserved_transactions)
+
+Transaction Service — Cassandra(transactions, transactions_by_card, transactions_preaggregated_daily, transactions_preaggregated_monthly)
+
+Orchestrator Service — Cassandra(cards, transactions_by_card, reserved_transactions)
+
+<pre>
+
+
+</pre>
+
 
 Transaction processing in more detail:  
 
-![transactions](https://user-images.githubusercontent.com/25267308/170844977-67ba2bec-4c75-48ab-bca6-a7b775ef2b24.svg)  
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/25267308/170844977-67ba2bec-4c75-48ab-bca6-a7b775ef2b24.svg" alt="transactions"/>
+</p>
 
 
 ## Run the Project
