@@ -60,7 +60,7 @@ Transaction processing in more detail:
 ## Run the Project
 
 ### Start Kafka
-First run Kafka to enable communication between microservices. Download Kafka, unzip the archive and run the below scripts:
+Firstly, run Kafka to enable communication between microservices. Download Kafka, unzip the archive and run the below scripts:
 
 * Start zookeeper server: `./bin/zookeeper-server-start.sh config/zookeeper.properties`
 * Start kafka bootstrap server: `./bin/kafka-server-start.sh config/server.properties`
@@ -106,9 +106,9 @@ pip install -r requirements.txt
 
 ### Start the Microservices
 
-**NOTE:** To start microservices specify **the same ports as in the examples below**, since links to microservices are temporary hardcoded in the .env files.
+**NOTE:** In kubernetes communication between microservices is not hardcoded and works via load balancer. However, if you want to start microservices LOCALLY specify **the same ports as in the examples below**, since links to microservices are temporary hardcoded in the .env files.
 
-**NOTE:** Inside each microservice folder add a .env file and secrets folder. Otherwise, the launch will be unsuccessful.
+**NOTE:** Inside each microservice folder add a .env file and secrets folder with .pem files for RSA2048. Otherwise, the launch will be unsuccessful.
 
 ```shell
 # Start the Auth Service
