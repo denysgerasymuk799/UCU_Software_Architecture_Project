@@ -18,8 +18,9 @@ The high-level diagram of our services from the infrastructure side looks like t
 
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/42843889/171362161-0bf51dfd-8411-454c-aa54-9dda4bef23bf.png" alt="SA_project_architecture_v4"/>
+  <img src="https://user-images.githubusercontent.com/42843889/171746032-9b8625da-eac6-404a-8a6c-3190639e0181.png" alt="SA_project_architecture_v5"/>
 </p>
+
 
 <pre>
 
