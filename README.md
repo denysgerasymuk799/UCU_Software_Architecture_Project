@@ -31,7 +31,7 @@ The high-level diagram of our services from the infrastructure side looks like t
 The high-level diagram of our services from the interaction side looks like this:  
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/25267308/170845004-c6acd272-bac7-48c3-a924-cd6b4bec010a.png" alt="interaction"/>
+  <img src="https://user-images.githubusercontent.com/25267308/171767733-5d680cb9-7d6a-4e2b-8373-b6e6109a61fa.png" alt="interaction"/>
 </p>
 
 
