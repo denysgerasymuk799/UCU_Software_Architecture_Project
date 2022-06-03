@@ -165,22 +165,47 @@ aws ecr create-repository --repository-name web_banking_auth_service
 # Current value
 AWS_ACCOUNT_ID=218145147595
 
-docker tag auth_service:0.1 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_auth_service
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 218145147595.dkr.ecr.eu-central-1.amazonaws.com
 
-docker tag registration_service:0.1 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_registration_service
+# Connect to Kubernetes with kubectl
+# https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-connection/
+aws eks --region eu-central-1 update-kubeconfig --name web-banking
 
-docker push 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_auth_service
+# Change links on microservices in env files based on a new load balancer
 
+# Deploy Kafka 
+# See "Configure Confluent for Kubernetes" section
+
+# Create topics in control-center.
+# To connect to it use the next command
+kubectl port-forward controlcenter-0 9021:9021
+
+# [If needed] Deploy services interacted with kafka
+docker build . -t transaction_service:0.1
+docker tag transaction_service:0.1 denys8herasymuk/web-banking-transaction-service:0.1
+docker push denys8herasymuk/web-banking-transaction-service:0.1
+
+# Deploy transaction service
+bash deploy_service.sh
+
+# Deploy card service
+bash deploy_service.sh
+
+# Deploy all API microservices
 cortex deploy
 
+# [If needed] Create microservice docker image
+docker tag auth_service:0.1 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_auth_service
+docker tag registration_service:0.1 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_registration_service
+docker push 218145147595.dkr.ecr.eu-central-1.amazonaws.com/web_banking_auth_service
+
+# [If needed] Deploy all other microservices, for each use the next command
+bash deploy_service.sh
+
+# Set up API Gateway
+
+# Just useful command
 cortex delete auth-service
-
-# Deploy services interacted with kafka
-docker build . -t transaction_service:0.1
-
-docker tag transaction_service:0.1 denys8herasymuk/web-banking-transaction-service:0.1
-
-docker push denys8herasymuk/web-banking-transaction-service:0.1
 ```
 
 
