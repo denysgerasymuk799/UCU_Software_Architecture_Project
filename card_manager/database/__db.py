@@ -8,6 +8,6 @@ class CardManagerOperator:
     def create_card(self, card_id: int):
         query = f"""
         INSERT INTO {CARDS_TABLE} (card_id, credit_limit)
-        VALUES ('{card_id}', 0);
+        VALUES ('{card_id}', 500);
         """
         self.__client.execute_write_query(query)
