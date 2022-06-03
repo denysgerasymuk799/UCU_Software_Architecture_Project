@@ -176,7 +176,7 @@ aws eks --region eu-central-1 update-kubeconfig --name web-banking
 # Deploy Kafka 
 # See "Configure Confluent for Kubernetes" section
 
-# Create topics in control-center.
+# Create topics in control-center: TransactionService, 
 # To connect to it use the next command
 kubectl port-forward controlcenter-0 9021:9021
 
