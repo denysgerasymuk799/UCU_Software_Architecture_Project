@@ -55,7 +55,8 @@ class CardService:
                 "card_id": data["card_id"]
             }
         }
-        await transaction_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(data["card_id"]) if data["card_id"] else uuid.uuid1().bytes
+        await transaction_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{data['transaction_id']}]. Status: COMPLETE.")
 
     async def reserve_balance(self, data: dict, transaction_service_topic):
@@ -97,7 +98,8 @@ class CardService:
                 "card_id": transaction.card_id
             }
         }
-        await transaction_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(transaction.card_id) if transaction.card_id else uuid.uuid1().bytes
+        await transaction_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{transaction.transaction_id}]. Status: RESERVED.")
 
     async def process_payment(self, data: dict, transaction_service_topic):
@@ -128,7 +130,8 @@ class CardService:
                 "card_id": data["card_id"]
             }
         }
-        await transaction_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(data["card_id"]) if data["card_id"] else uuid.uuid1().bytes
+        await transaction_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{data['transaction_id']}]. Status: COMPLETE.")
 
     async def cancel_reservation(self, data: dict, transaction_service_topic):
@@ -152,5 +155,6 @@ class CardService:
                 "card_id": data["card_id"]
             }
         }
-        await transaction_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(data["card_id"]) if data["card_id"] else uuid.uuid1().bytes
+        await transaction_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{data['transaction_id']}]. Status: CANCELLED.")

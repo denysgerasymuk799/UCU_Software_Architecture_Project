@@ -1,4 +1,6 @@
 import json
+import uuid
+
 from aiokafka import AIOKafkaProducer
 from kafka.errors import KafkaTimeoutError
 
@@ -23,10 +25,11 @@ class ServiceProducer:
             loop=kafka_loop
         )
 
-    async def send(self, topic, message):
+    async def send(self, topic, partition_key, message):
         await self.__producer.start()
         try:
-            await self.__producer.send_and_wait(topic=topic, value=message)
+            partition_key = str.encode(partition_key) if partition_key else uuid.uuid1().bytes
+            await self.__producer.send_and_wait(topic=topic, key=partition_key, value=message)
             success_callback(self.__logger, topic)
 
         # if unable to fetch topic metadata, or unable to obtain memory buffer.

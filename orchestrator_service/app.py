@@ -120,7 +120,9 @@ async def handle_transaction(request: Request):
     request_params = form.__dict__['_dict']
 
     if str(auth_card_id) != request_params['card_id']:
-        return JSONResponse(content={'content': 'Wrong user sender card id'}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+        return JSONResponse(content={'content': 'Wrong user sender card id'},
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=cors)
 
     transaction_id = str(uuid.uuid1())
     producer = ServiceProducer("ServiceProducer")
@@ -143,7 +145,7 @@ async def handle_transaction(request: Request):
             "amount": request_params['amount'],
         }
     }
-    await producer.send("TransactionService", message_)
+    await producer.send("TransactionService", partition_key=request_params['receiver_card_id'], message=message_)
     logger.info(f'The next message is sent -- {message_}')
 
     return JSONResponse(content={'transaction_id': transaction_id}, status_code=status.HTTP_200_OK, headers=cors)

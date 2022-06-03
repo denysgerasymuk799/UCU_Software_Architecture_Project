@@ -61,7 +61,8 @@ class TransactionService:
                 "date": record.date
             }
         }
-        await card_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(record.card_id) if record.card_id else uuid.uuid1().bytes
+        await card_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{record.transaction_id}]. Status: {TRANSACTION_NEW_STATUS}.")
 
     async def create_transaction(self, data: dict, card_service_topic):
@@ -98,7 +99,8 @@ class TransactionService:
                 "date": record.date
             }
         }
-        await card_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(record.receiver_card_id) if record.receiver_card_id else uuid.uuid1().bytes
+        await card_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{record.transaction_id}]. Status: {TRANSACTION_NEW_STATUS}.")
 
     async def execute_transaction(self, data, card_service_topic):
@@ -128,7 +130,8 @@ class TransactionService:
                 "card_id": card_id
             }
         }
-        await card_service_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        partition_key = str.encode(card_id) if card_id else uuid.uuid1().bytes
+        await card_service_topic.send(key=partition_key, value=json.dumps(message).encode())
         self.__logger.info(f"Transaction: [{transaction_id}]. Status: {TRANSACTION_PENDING_STATUS}.")
 
     async def send_transaction_result(self, transaction_id: str, results_topic):
@@ -150,8 +153,10 @@ class TransactionService:
             "date": date,
             "status": "COMPLETED" if status == TRANSACTION_COMPLETED_STATUS else "FAILED"
         }
-        # Send response to SAGA.
-        await results_topic.send(key=uuid.uuid1().bytes, value=json.dumps(message).encode())
+        # Send response to orchestrator.
+        partition_key = str.encode(message["receiver_card_id"]) if message["receiver_card_id"] and message["receiver_card_id"] != TOP_UP_ACTIVITY\
+            else uuid.uuid1().bytes
+        await results_topic.send(key=partition_key, value=json.dumps(message).encode())
 
     async def set_transaction_completion_status(self, data: dict, status: str, results_topic):
         """
