@@ -145,6 +145,10 @@ class TransactionService:
         record = self.__db.get_transaction_record(transaction_id)
         transaction_id, card_id, receiver_card_id, amount, status, date = record
 
+        # Save transaction record in successful transactions table in case transaction is successful.
+        if status == TRANSACTION_COMPLETED_STATUS:
+            self.__db.save_successful_transaction(transaction_id)
+
         message = {
             "transaction_id": transaction_id,
             "card_id": card_id,

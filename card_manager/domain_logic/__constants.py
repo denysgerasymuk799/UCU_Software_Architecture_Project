@@ -32,6 +32,7 @@ RESERVED_TR_TABLE = "reserved_transactions"
 CARDS_TABLE = "cards"
 TR_PREAGGREGATED_DAILY_TABLE = "transactions_preaggregated_daily"
 TR_PREAGGREGATED_MONTHLY_TABLE = "transactions_preaggregated_monthly"
+USERS_UNIQUE_DAILY_TABLE = "unique_users_daily"
 
 # ------------- Message Body Variables --------------
 RESPONSE_SUCCESS = 200

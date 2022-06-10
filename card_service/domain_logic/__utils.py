@@ -5,6 +5,15 @@ import datetime
 import os
 
 
+def validate_numeric(value):
+    if isinstance(value, int):
+        return True
+    elif isinstance(value, str):
+        return value.isnumeric()
+    else:
+        return False
+
+
 def get_logger(name) -> logging.Logger:
     """
     Return INFO logger that is writing logs to a file.

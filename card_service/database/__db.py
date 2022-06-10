@@ -1,4 +1,5 @@
 from domain_logic.__constants import *
+from domain_logic.__utils import validate_numeric
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -29,14 +30,11 @@ class CardServiceOperator:
     def __init__(self, client) -> None:
         self.__client = client
 
-    def create_card(self, card_id):
-        query = f"""
-        INSERT INTO {CARDS_TABLE} (card_id, credit_limit)
-        VALUES ('{card_id}', 0);
-        """
-        return self.__client.execute_write_query(query)
-
     def topup_balance(self, card_id: str, amount: int):
+        # Validate user input parameters to prevent SQL injections.
+        if not validate_numeric(amount):
+            return None
+
         # Get cardholder current credit limit to carry operation on.
         query = f"""SELECT credit_limit FROM {CARDS_TABLE} WHERE card_id = '{card_id}';"""
         try:

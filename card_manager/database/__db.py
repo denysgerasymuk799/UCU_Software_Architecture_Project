@@ -1,4 +1,5 @@
 from domain_logic.__constants import *
+from datetime import datetime
 
 
 class CardManagerOperator:
@@ -9,5 +10,12 @@ class CardManagerOperator:
         query = f"""
         INSERT INTO {CARDS_TABLE} (card_id, credit_limit)
         VALUES ('{card_id}', 500);
+        """
+        self.__client.execute_write_query(query)
+
+        # Save card creation time to a separate table.
+        query = f"""
+        INSERT INTO {USERS_UNIQUE_DAILY_TABLE} (card_id, date) 
+        VALUES ('{card_id}', '{datetime.now().strftime("%Y-%m-%d")}');
         """
         self.__client.execute_write_query(query)

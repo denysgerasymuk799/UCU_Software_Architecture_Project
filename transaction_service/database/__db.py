@@ -1,4 +1,5 @@
 from domain_logic.__constants import *
+from domain_logic.__utils import validate_numeric
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -42,6 +43,10 @@ class TransactionServiceOperator:
         return records[0]
 
     def create_transaction_record(self, trans: Transaction):
+        # Validate user input parameters to prevent SQL injections.
+        if not validate_numeric(trans.receiver_card_id) or not validate_numeric(trans.amount):
+            return
+
         # If activity is not a balance top up.
         if trans.receiver_card_id != TOP_UP_ACTIVITY:
             # Check whether such receiver exists.
@@ -51,22 +56,22 @@ class TransactionServiceOperator:
                 return
 
         # Insert transaction record into table.
-        timestamp = datetime.utcnow().timestamp()
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = f"""
         INSERT INTO {TRANSACTIONS_TABLE} (transaction_id, card_id, receiver_card_id, amount, status, date)
-        VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', {int(timestamp)});
+        VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', '{date}');
         """
         self.__client.execute_write_query(query)
         query = f"""
         INSERT INTO {TRANSACTIONS_BY_CARD_TABLE} (transaction_id, card_id, sender_card_id, receiver_card_id, amount, status, date)
-        VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', {int(timestamp)});
+        VALUES ('{trans.transaction_id}', '{trans.card_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', '{date}');
         """
         self.__client.execute_write_query(query)
 
         if trans.receiver_card_id != TOP_UP_ACTIVITY:
             query = f"""
             INSERT INTO {TRANSACTIONS_BY_CARD_TABLE} (transaction_id, card_id, sender_card_id, receiver_card_id, amount, status, date)
-            VALUES ('{trans.transaction_id}', '{trans.receiver_card_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', {int(timestamp)});
+            VALUES ('{trans.transaction_id}', '{trans.receiver_card_id}', '{trans.card_id}', '{trans.receiver_card_id}', {trans.amount}, '{trans.status}', '{date}');
             """
             self.__client.execute_write_query(query)
 
@@ -106,3 +111,17 @@ class TransactionServiceOperator:
             WHERE card_id = '{receiver_card_id}' AND date='{date}' AND transaction_id = '{transaction_id}';
             """
             self.__client.execute_write_query(query)
+
+    def save_successful_transaction(self, transaction_id: str):
+        # Get transaction record.
+        record = self.get_transaction_record(transaction_id)
+        if not record:
+            return None
+
+        # Save successful transaction with its completion date.
+        date = datetime.now().strftime("%Y-%m-%d")
+        query = f"""
+        INSERT INTO {SUCCESSFUL_TRANSACTIONS_DAILY_TABLE} (transaction_id, card_id, receiver_card_id, amount, date)
+        VALUES ('{record.transaction_id}', '{record.card_id}', '{record.receiver_card_id}', {record.amount}, '{date}');
+        """
+        self.__client.execute_write_query(query)
