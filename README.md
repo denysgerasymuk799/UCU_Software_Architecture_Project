@@ -12,7 +12,9 @@
 
 ## Description
 
-**unobank** is a web banking project creared by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
+**unobank** is a web banking project created by the students of Ukrainian Catholic University. It allows user to register and top up their accounts, send money based on the card_id of recipient, and see a list of transactions. The project's architecture is heavily decoupled by using **seven** microservices that interact with each other. We leverage the AWS cloud platform to enable secure, fast, and robust infrastructure.
+
+**Project documentation** -- https://proximal-bladder-a8d.notion.site/Online-Web-Banking-Project-74a56734638b44c184b3505ad26338d4
 
 The high-level diagram of our services from the infrastructure side looks like this:  
 
@@ -56,6 +58,17 @@ Transaction processing in more detail:
 <p align="center">
   <img src="https://user-images.githubusercontent.com/25267308/170844977-67ba2bec-4c75-48ab-bca6-a7b775ef2b24.svg" alt="transactions"/>
 </p>
+
+
+## Big Data Functionality in the project
+
+* Use Cassandra for transaction logic
+* Enable Ggneral bank statistics and pre-aggregated analytics for each user
+* Create data generator for transactions to test Big Data functionality
+* Use Kafka for transaction logic defined
+
+Code related to above points located in `analytics_service`, `card_manager`, `card_service` and `transaction_service`.
+For more details read our documentation -- https://proximal-bladder-a8d.notion.site/Online-Web-Banking-Project-74a56734638b44c184b3505ad26338d4
 
 
 ## Run the Project
