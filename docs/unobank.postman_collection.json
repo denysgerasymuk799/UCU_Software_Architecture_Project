@@ -1,0 +1,98 @@
+{
+	"info": {
+		"_postman_id": "a12ab458-10a7-44cd-b76e-fc0366bd513d",
+		"name": "unobank",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21410735"
+	},
+	"item": [
+		{
+			"name": "GetUserDailySpendings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8009/get_spendings_by_days?from_date=2022-05-25&to_date=2022-06-01&card_id=2202200521155562",
+					"host": [
+						"localhost"
+					],
+					"port": "8009",
+					"path": [
+						"get_spendings_by_days"
+					],
+					"query": [
+						{
+							"key": "from_date",
+							"value": "2022-05-25"
+						},
+						{
+							"key": "to_date",
+							"value": "2022-06-01"
+						},
+						{
+							"key": "card_id",
+							"value": "2202200521155562"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetUserMonthlySpendings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8009/get_spendings_by_months?from_date=2022-04-01&to_date=2022-06-01&card_id=2202200521155562",
+					"host": [
+						"localhost"
+					],
+					"port": "8009",
+					"path": [
+						"get_spendings_by_months"
+					],
+					"query": [
+						{
+							"key": "from_date",
+							"value": "2022-04-01"
+						},
+						{
+							"key": "to_date",
+							"value": "2022-06-01"
+						},
+						{
+							"key": "card_id",
+							"value": "2202200521155562"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetBankStatistics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8009/get_bank_statistics?date=2022-06-05",
+					"host": [
+						"localhost"
+					],
+					"port": "8009",
+					"path": [
+						"get_bank_statistics"
+					],
+					"query": [
+						{
+							"key": "date",
+							"value": "2022-06-05"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

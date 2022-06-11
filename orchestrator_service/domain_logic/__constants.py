@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 # ------------- Constants to setup --------------
 DEBUG_MODE = False
+GENERATOR_TOKEN = os.getenv("GENERATOR_TOKEN")
 # ------------- Service Links --------------
 MONGODB_URL = os.getenv("MONGODB_URL")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
@@ -34,7 +35,7 @@ TRANSACTION_SERVICE_PRODUCER_NAME = "TransactionServiceProducer"
 TRANSACTION_TABLE = "transactions"
 RESERVED_TABLE = "reserved"
 WALLET_TABLE = "wallet"
-# ------- MongoDB Instanse Handler Variables --------
+# ------- MongoDB Instance Handler Variables --------
 NUM_RETRIES = 5
 MAX_RETURN_LENGTH = 100
 

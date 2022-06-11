@@ -94,7 +94,6 @@ async def registration(request: Request):
             request_url = AUTH_SERVICE_URL + '/insert_new_auth_user'
             data = AuthUser(**form.__dict__).__dict__
             data['username'] = form.email
-            print('send data -- ', data)
             response = await post_request(client, request_url,
                                           headers={
                                               "Accept": "application/json"},

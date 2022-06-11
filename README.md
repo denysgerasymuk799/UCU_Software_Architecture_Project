@@ -2,8 +2,8 @@
 
 ## Features
 
-- Functionality: `Deposit money` `Send money` `List transactions` `Login/Sign Up with JWT Token`
-- Technologies: `Kafka` `AWS` `React` `Python` `Docker` `Grafana` `Prometheus`
+- Functionality: `Deposit money` `Send money` `List transactions` `Login/Sign Up with JWT Token` `User/General Bank Analytics`
+- Technologies: `Kafka` `AWS` `React` `Python` `Docker` `Grafana` `Prometheus` `Databricks`
 - Frameworks: `FastAPI` `Faust`
 - Databases: `AWS Keyspaces` `MongoDB`
 - AWS Resources: `EKS`  `ELB`  `CloudWatch` `API Gateway`  `S3` `Amplify` `IAM` `KMS` `VPC`
@@ -20,7 +20,7 @@ The high-level diagram of our services from the infrastructure side looks like t
 
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/42843889/171746032-9b8625da-eac6-404a-8a6c-3190639e0181.png" alt="SA_project_architecture_v5"/>
+  <img src="https://user-images.githubusercontent.com/42843889/173257312-ad4db461-2367-423c-8aed-4f4e464500ee.png" alt="SA_project_architecture_v6"/>
 </p>
 
 
@@ -37,15 +37,15 @@ The high-level diagram of our services from the interaction side looks like this
 </p>
 
 
-**Cassandra interaction**
+**Cassandra Interaction**
 
-Card Manager — Cassandra(cards)
-
-Card Service — Cassandra(cards, reserved_transactions)
-
-Transaction Service — Cassandra(transactions, transactions_by_card, transactions_preaggregated_daily, transactions_preaggregated_monthly)
-
-Orchestrator Service — Cassandra(cards, transactions_by_card, reserved_transactions)
+| Microservice | Cassandra Tables |
+| --- | --- |
+| CardManager | [cards, unique_users_daily] |
+| OrchestratorService | [cards, transactions_by_card, reserved_transactions] |
+| CardService | [cards, reserved_transactions] |
+| TransactionService | [transactions, transactions_by_card, successful_transactions_daily,                                                                                                                               transactions_preaggregated_daily, transactions_preaggregated_monthly] |
+| AnalyticsService | [bank_statistics_daily, transactions_preaggregated_daily, transactions_preaggregated_monthly] |
 
 <pre>
 
@@ -115,6 +115,11 @@ pip install -r requirements.txt
 # Prepare the Orchestration Service
 python3.8 -m venv orchestrator_service_venv
 source orchestrator_service_venv/bin/activate
+pip install -r requirements.txt
+
+# Prepare the Analytics Service
+python3.8 -m venv analytics_service_venv
+source analytics_service_venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -189,9 +194,11 @@ aws eks --region eu-central-1 update-kubeconfig --name web-banking
 # Deploy Kafka 
 # See "Configure Confluent for Kubernetes" section
 
-# Create topics in control-center: TransactionService, 
+# Create topics in control-center: TransactionService, CardService, ResultsTopic.
 # To connect to it use the next command
 kubectl port-forward controlcenter-0 9021:9021
+
+# Change log level from DEBUG to INFO in all microservices
 
 # [If needed] Deploy services interacted with kafka
 docker build . -t transaction_service:0.1

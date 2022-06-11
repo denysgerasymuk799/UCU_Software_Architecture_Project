@@ -47,5 +47,19 @@ class AnalyticsServiceOperator:
         except IndexError:
             return None, None, None
 
+    def get_all_bank_statistics(self):
+        # Get statistics for a certain date.
+        query = f"""
+        SELECT "date", number_transactions, number_unique_users, capital_turnover
+        FROM {BANK_STATISTICS_DAILY_TABLE}
+        LIMIT 92;
+        """
+        # In case there are no records.
+        try:
+            statistics = list(self.__client.execute_read_query(query))
+            return statistics
+        except IndexError:
+            return None, None, None
+
     def shutdown(self):
         self.__client.close()

@@ -8,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from domain_logic.utils.custom_logger import CustomHandler
 from domain_logic.utils.cryptographer import Cryptographer
+from domain_logic.constants import DEBUG_MODE
 
 # Set up global constants
 load_dotenv()
@@ -27,6 +28,9 @@ client = aiohttp.ClientSession(loop=loop)
 cryptographer = Cryptographer(public_key_location=os.getenv('PUBLIC_KEY_LOCATION'),
                               private_key_location=os.getenv('PRIVATE_KEY_LOCATION'))
 logger = logging.getLogger('root')
-logger.setLevel('INFO')
-logging.disable(logging.DEBUG)
+if DEBUG_MODE:
+    logger.setLevel('DEBUG')
+else:
+    logger.setLevel('INFO')
+    logging.disable(logging.DEBUG)
 logger.addHandler(CustomHandler())

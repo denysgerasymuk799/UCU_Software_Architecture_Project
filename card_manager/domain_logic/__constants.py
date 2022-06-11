@@ -4,6 +4,7 @@ import os
 
 
 load_dotenv()
+DEBUG_MODE = False
 # ----------------- Service Links -------------------
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 

@@ -26,7 +26,6 @@ async def consume_results():
         async for record in consumer:
             print(f'Consumer record: {record}')
             msg = json.loads(record.value)
-            print(f'Consumer msg: {msg}')
             transaction_id = msg['transaction_id']
             card_id = msg['card_id']
             receiver_card_id = msg['receiver_card_id']

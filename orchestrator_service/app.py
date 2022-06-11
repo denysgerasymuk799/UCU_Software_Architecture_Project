@@ -113,16 +113,28 @@ async def options():
 @app.post("/handle_transaction")
 async def handle_transaction(request: Request):
     form = await request.form()
-    is_valid_token, msg, auth_card_id = await validate_token(form, request)
-    if not is_valid_token:
-        return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
-
     request_params = form.__dict__['_dict']
-
-    if str(auth_card_id) != request_params['card_id']:
-        return JSONResponse(content={'content': 'Wrong user sender card id'},
-                            status_code=status.HTTP_401_UNAUTHORIZED,
+    try:
+        if int(request_params['amount']) <= 0:
+            return JSONResponse(content={'content': 'Invalid input value for amount. It must be more then zero'},
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                headers=cors)
+    except Exception as err:
+        logger.error(err)
+        return JSONResponse(content={'content': 'Invalid input value for amount. It must be more then zero'},
+                            status_code=status.HTTP_400_BAD_REQUEST,
                             headers=cors)
+
+    # Skip checks for test generator
+    if not ('token' in request_params.keys() and request_params['token'] == GENERATOR_TOKEN):
+        is_valid_token, msg, auth_card_id = await validate_token(form, request)
+        if not is_valid_token:
+            return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+
+        if str(auth_card_id) != request_params['card_id']:
+            return JSONResponse(content={'content': 'Wrong user sender card id'},
+                                status_code=status.HTTP_401_UNAUTHORIZED,
+                                headers=cors)
 
     transaction_id = str(uuid.uuid1())
     producer = ServiceProducer("ServiceProducer")
@@ -154,7 +166,7 @@ async def handle_transaction(request: Request):
 @app.get("/get_notifications")
 async def get_notifications(request: Request):
     request_params = request.query_params
-    print('request_params', request_params)
+    logger.info(f'request_params: {request_params}')
 
     try:
         last_transaction_id = request_params['last_transaction_id']
@@ -182,7 +194,8 @@ async def get_notifications(request: Request):
     print(f'{auth_card_id}/{date}')
 
     if 'Contents' not in response:
-        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': 'empty'}, status_code=status.HTTP_200_OK, headers=cors)
+        return JSONResponse(content={'new_transactions': [], 'last_transaction_id': 'empty'},
+                            status_code=status.HTTP_200_OK, headers=cors)
 
     response_sorted = sorted(response['Contents'], key=lambda a: a['LastModified'], reverse=True)
 
@@ -201,8 +214,8 @@ async def get_notifications(request: Request):
         )
         j = json.loads(obj['Body'].read())
         new_transactions.append(j)
-    print("new_transactions", len(new_transactions))
-    return JSONResponse(content={'new_transactions': new_transactions, 'last_transaction_id': response_sorted[0]['Key']}, status_code=status.HTTP_200_OK, headers=cors)
+    return JSONResponse(content={'new_transactions': new_transactions, 'last_transaction_id': response_sorted[0]['Key']},
+                        status_code=status.HTTP_200_OK, headers=cors)
 
 
 @app.get("/get_balance")
@@ -223,7 +236,8 @@ async def get_balance(request: Request):
         return JSONResponse(content={'content': msg}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
     if auth_card_id != card_id:
-        return JSONResponse(content={'content': 'Wrong user sender card id'}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+        return JSONResponse(content={'content': 'Wrong user sender card id'},
+                            status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
     db = TransactionServiceOperator(cassandra_client)
     balance = db.get_balance(card_id)
@@ -247,7 +261,8 @@ async def get_transactions(request: Request):
     is_valid_token, msg, auth_card_id = await validate_token(request_params, request)
 
     if auth_card_id != card_id:
-        return JSONResponse(content={'content': 'Wrong user sender card id'}, status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
+        return JSONResponse(content={'content': 'Wrong user sender card id'},
+                            status_code=status.HTTP_401_UNAUTHORIZED, headers=cors)
 
     if not is_valid_token:
         return JSONResponse(content={'content': msg},

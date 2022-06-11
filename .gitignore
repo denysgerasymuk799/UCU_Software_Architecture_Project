@@ -11,11 +11,14 @@ transaction-service-data
 wallet-service-data
 card-service-data
 .env
+*.env
+*.pem
 confluent_credentials.config
 *.crt
 20K.txt
-secrets
 env.js
+secrets
+report.html
 
 doc/build/*
 doc/_build/*

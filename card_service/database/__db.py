@@ -95,7 +95,6 @@ class CardServiceOperator:
         if not transactions:
             return None
         else:
-            print(transactions[0][4])
             transaction = Transaction(
                 transaction_id=transactions[0][0],
                 card_id=transactions[0][1],

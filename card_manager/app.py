@@ -108,7 +108,7 @@ async def options():
 @app.post("/create_card")
 async def create_card(request: Request):
     request_params = await request.json()
-    print(request_params)
+    logger.info(request_params)
 
     card_id = request_params["card_id"]
     token = request_params["token"]

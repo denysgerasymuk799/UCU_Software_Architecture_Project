@@ -3,6 +3,11 @@ import os
 
 
 load_dotenv("analytics-service.env")
+# ------------- Constants to setup --------------
+DEBUG_MODE = False
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
+ADMIN_CARD_ID = os.getenv("ADMIN_CARD_ID")
+
 # ------------------- Cassandra ---------------------
 CASSANDRA_HOST = os.getenv("CASSANDRA_HOST")
 CASSANDRA_PORT = int(os.getenv("CASSANDRA_PORT"))

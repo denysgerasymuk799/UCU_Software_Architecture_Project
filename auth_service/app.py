@@ -58,7 +58,7 @@ def get_password_hash(password):
 
 async def authenticate_user(email: str, password: str):
     user = await get_user(email)
-    print('user -- ', user)
+    logger.info(f'user -- {user}')
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -167,7 +167,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    print(dir(user))
     return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id,
             "user_name": f"{user.firstname} {user.lastname}", "card_id": user.card_id,
             "email": user.username}
@@ -184,14 +183,14 @@ async def insert_new_auth_user(request: Request):
     * role: str, user role
     * card_id: str, assigned card id
     """
-    print('request.json() -- ', await request.json())
+    logger.info(f'request.json() -- {await request.json()}')
     form = NewAuthUserForm(request)
     logger.info(f'Request form -- {form}')
     await form.load_data()
     form.disabled = False
     if await form.is_valid():
         try:
-            print(form.__dict__.values())
+            logger.debug(form.__dict__.values())
             new_user_id = await create_new_user(db, User(**form.__dict__))
             logger.info(f'new_auth_user_id -- {new_user_id}')
 
@@ -219,7 +218,6 @@ async def login(request: Request):
     logger.info(f'Request form -- {await request.form()}')
     form = LoginForm(request)
     logger.debug(f'form_data.username -- {form.username}')
-    logger.debug(f'form_data.password -- {form.password}')
     await form.load_data()
     try:
         access_token_info = await login_for_access_token(form_data=form)
