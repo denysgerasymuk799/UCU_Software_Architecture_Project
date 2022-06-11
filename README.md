@@ -67,7 +67,7 @@ Transaction processing in more detail:
 * Create data generator for transactions to test Big Data functionality
 * Use Kafka for transaction logic defined
 
-Code related to above points located in `analytics_service`, `card_manager`, `card_service` and `transaction_service`.
+Code related to above points located in `ddl`, `analytics_service`, `card_manager`, `card_service` and `transaction_service`.
 For more details read our documentation -- https://proximal-bladder-a8d.notion.site/Online-Web-Banking-Project-74a56734638b44c184b3505ad26338d4
 
 
