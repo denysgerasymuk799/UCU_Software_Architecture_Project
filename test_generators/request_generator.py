@@ -45,7 +45,7 @@ def make_registration_request():
 
 
 def make_topup_request():
-    amount = random.randint(1, 500)
+    amount = random.randint(1, 6)
     card_id = random.choice(USER_CARDS)
     payload = {
         "card_id": card_id,
@@ -67,7 +67,7 @@ def make_topup_request():
 
 
 def make_transaction_request():
-    amount = random.randint(1, 500)
+    amount = random.randint(1, 6)
     card_id, receiver_card_id = random.sample(USER_CARDS, 2)
     payload = {
         "card_id": card_id,
@@ -99,7 +99,7 @@ def run_generator():
     }
 
     n_requests = 0
-    requests_per_second = 10
+    requests_per_second = 1
     total_start_time = datetime.now()
     start_time = time.time()
     while True:
@@ -126,7 +126,7 @@ def run_generator():
             start_time = time.time()
 
         # Periodically make execution time logs
-        if n_requests % 50 == 0:
+        if n_requests % 10 == 0:
             cur_time = datetime.now()
             print('Request number: ', n_requests)
             print('Time from the generator start (in minutes): ', (cur_time - total_start_time).total_seconds() // 60)
